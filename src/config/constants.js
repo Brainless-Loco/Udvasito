@@ -2,7 +2,7 @@
 
 export const BLOOD_GROUPS = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
 
-export const GENDER_OPTIONS = ['Male', 'Female', 'Other'];
+export const GENDER_OPTIONS = ['Male', 'Female'];
 
 export const INSTITUTIONS = [
   'University of Chittagong',

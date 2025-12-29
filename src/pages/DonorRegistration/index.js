@@ -135,7 +135,7 @@ const DonorRegistration = () => {
     };
 
     return (
-        <Box sx={{ pt: 12, pb: 8, background: 'linear-gradient(180deg, #f8f9fa 0%, #e9ecef 100%)', minHeight: '100vh' }}>
+        <Box sx={{ pt: 12, pb: 8, px:2, background: 'linear-gradient(180deg, #f8f9fa 0%, #e9ecef 100%)', minHeight: '100vh' }}>
             <Box maxWidth="xl">
                 <SectionHeader
                     icon={PersonAddIcon}
