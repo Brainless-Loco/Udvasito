@@ -1,0 +1,14 @@
+export { default as Home } from './Home';
+export { default as FindDonor } from './FindDonor';
+export { default as DonorRegistration } from './DonorRegistration';
+export { default as VolunteerRegistration } from './VolunteerRegistration';
+export { default as About } from './About';
+export { default as FAQ } from './FAQ';
+export { default as Testimonials } from './Testimonials';
+export { default as Gallery } from './Gallery';
+export { default as Events } from './Events';
+export { default as SuccessStories } from './SuccessStories';
+export { default as Blogs } from './Blogs';
+export { default as Contact } from './Contact';
+export { default as ProjectArchitecture } from './ProjectArchitecture';
+export { default as UnderDevelopment } from './UnderDevelopment';
