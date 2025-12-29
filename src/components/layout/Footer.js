@@ -21,6 +21,11 @@ const Footer = () => {
     { label: t.nav.donorRegistration, path: ROUTES.DONOR_REGISTRATION },
     { label: t.nav.about, path: ROUTES.ABOUT },
     { label: t.nav.faq, path: ROUTES.FAQ },
+    { label: t.nav.testimonials, path: ROUTES.TESTIMONIALS },
+    { label: t.nav.gallery, path: ROUTES.GALLERY },
+    { label: t.nav.events, path: ROUTES.EVENTS },
+    { label: t.nav.successStories, path: ROUTES.SUCCESS_STORIES },
+    { label: t.nav.blogs, path: ROUTES.BLOGS },
     { label: t.nav.contact, path: ROUTES.CONTACT },
   ];
 

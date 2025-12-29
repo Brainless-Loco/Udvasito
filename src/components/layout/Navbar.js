@@ -33,6 +33,7 @@ import {
   MonitorHeart as HeartIcon,
   VolunteerActivism as VolunteerIcon,
   FormatQuote as QuoteIcon,
+  MoreHoriz as MoreIcon,
 } from '@mui/icons-material';
 import { useLanguage } from '../../context';
 import { ROUTES } from '../../config/constants';
@@ -40,6 +41,7 @@ import { ROUTES } from '../../config/constants';
 const Navbar = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [langAnchor, setLangAnchor] = useState(null);
+  const [moreAnchor, setMoreAnchor] = useState(null);
   const { t, language, toggleLanguage } = useLanguage();
   const location = useLocation();
 
@@ -80,6 +82,19 @@ const Navbar = () => {
     toggleLanguage();
     handleLangClose();
   };
+
+  const handleMoreClick = (event) => {
+    setMoreAnchor(event.currentTarget);
+  };
+
+  const handleMoreClose = () => {
+    setMoreAnchor(null);
+  };
+
+  // Main nav items (shown directly)
+  const mainNavItems = navItems.slice(0, 5);
+  // More nav items (shown in dropdown)
+  const moreNavItems = navItems.slice(5);
 
   const drawer = (
     <Box sx={{ width: 280 }}>
@@ -197,7 +212,7 @@ const Navbar = () => {
               flexGrow: 1,
             }}
           >
-            {navItems.slice(0, 6).map((item) => (
+            {mainNavItems.map((item) => (
               <Button
                 key={item.path}
                 component={Link}
@@ -222,6 +237,92 @@ const Navbar = () => {
                 {item.label}
               </Button>
             ))}
+
+            {/* More Dropdown */}
+            {moreNavItems.length > 0 && (
+              <>
+                <Button
+                  onClick={handleMoreClick}
+                  endIcon={<MoreIcon />}
+                  sx={{
+                    color: isScrolled ? '#1d3557' : 'white',
+                    fontWeight: 500,
+                    backgroundColor: moreNavItems.some(item => location.pathname === item.path)
+                      ? 'rgba(230, 57, 70, 0.1)'
+                      : 'transparent',
+                    '&:hover': {
+                      backgroundColor: isScrolled ? '#1d3557' : 'rgba(255,255,255,0.2)',
+                      color: isScrolled ? 'white' : 'white',
+                    },
+                    borderRadius: 2,
+                    px: 2,
+                    py: 1,
+                    textTransform: 'none',
+                    fontSize: '0.9rem',
+                    transition: 'all 0.3s ease',
+                  }}
+                >
+                  {t.nav.more || 'More'}
+                </Button>
+                <Menu
+                  anchorEl={moreAnchor}
+                  open={Boolean(moreAnchor)}
+                  onClose={handleMoreClose}
+                  PaperProps={{
+                    sx: {
+                      mt: 1,
+                      borderRadius: 2,
+                      boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
+                    },
+                  }}
+                >
+                  {moreNavItems.map((item) => (
+                    <MenuItem
+                      key={item.path}
+                      component={Link}
+                      to={item.path}
+                      onClick={handleMoreClose}
+                      selected={location.pathname === item.path}
+                      sx={{
+                        gap: 1.5,
+                        py: 1.5,
+                        px: 2.5,
+                        '&.Mui-selected': {
+                          backgroundColor: 'rgba(230, 57, 70, 0.1)',
+                        },
+                        '&:hover': {
+                          backgroundColor: 'rgba(230, 57, 70, 0.05)',
+                        },
+                      }}
+                    >
+                      <ListItemIcon sx={{ minWidth: 'auto', color: location.pathname === item.path ? '#e63946' : 'inherit' }}>
+                        {item.icon}
+                      </ListItemIcon>
+                      <Typography
+                        sx={{
+                          fontWeight: location.pathname === item.path ? 600 : 400,
+                          color: location.pathname === item.path ? '#e63946' : 'inherit',
+                        }}
+                      >
+                        {item.label}
+                      </Typography>
+                    </MenuItem>
+                  ))}
+                  <Divider sx={{ my: 1 }} />
+                  <MenuItem
+                    component={Link}
+                    to={ROUTES.VOLUNTEER_REGISTRATION}
+                    onClick={handleMoreClose}
+                    sx={{ gap: 1.5, py: 1.5, px: 2.5 }}
+                  >
+                    <ListItemIcon sx={{ minWidth: 'auto' }}>
+                      <VolunteerIcon />
+                    </ListItemIcon>
+                    <Typography>{t.nav.volunteerRegistration}</Typography>
+                  </MenuItem>
+                </Menu>
+              </>
+            )}
           </Box>
 
           {/* Language Toggle */}
@@ -260,6 +361,7 @@ const Navbar = () => {
             sx={{
               display: { lg: 'none' },
               color: isScrolled ? '#1d3557' : 'white',
+              ml: 'auto',
             }}
           >
             <MenuIcon />

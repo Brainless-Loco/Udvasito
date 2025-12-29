@@ -5,14 +5,38 @@ import {
   Favorite as HeartIcon,
   GitHub as GitHubIcon,
   LinkedIn as LinkedInIcon,
+  Facebook as FacebookIcon,
   School as SchoolIcon,
 } from '@mui/icons-material';
 
 const CreditsSection = () => {
   const developers = [
-    { name: 'Tonmoy', avatar: 'T', color: '#e63946' },
-    { name: 'Hisan', avatar: 'H', color: '#457b9d' },
+    {
+      name: 'Tonmoy',
+      image: '/assets/credit/tonmoy.jpg',
+      color: '#457b9d',
+      github: 'https://github.com/Brainless-Loco',
+      linkedin: 'https://linkedin.com/in/-tonmoy-das-',
+      facebook: '',
+    },
+    {
+      name: 'Hasin',
+      image: '/assets/credit/hasin.jpg',
+      color: '#457b9d',
+      github: '',
+      linkedin: '',
+      facebook: 'https://www.facebook.com/shakibrahmanhisan/',
+    },
   ];
+
+  // Get available social links (max 2)
+  const getSocialLinks = (dev) => {
+    const links = [];
+    if (dev.github) links.push({ type: 'github', url: dev.github, icon: <GitHubIcon sx={{ fontSize: '1rem' }} />, hoverColor: 'white' });
+    if (dev.linkedin) links.push({ type: 'linkedin', url: dev.linkedin, icon: <LinkedInIcon sx={{ fontSize: '1rem' }} />, hoverColor: '#0077b5' });
+    if (dev.facebook) links.push({ type: 'facebook', url: dev.facebook, icon: <FacebookIcon sx={{ fontSize: '1rem' }} />, hoverColor: '#1877f2' });
+    return links.slice(0, 2);
+  };
 
   return (
     <Box
@@ -32,56 +56,82 @@ const CreditsSection = () => {
             <HeartIcon sx={{ color: '#e63946', fontSize: '1.3rem' }} />
           </Box>
 
-          {/* Developer Cards - Compact Row */}
-          <Box sx={{ display: 'flex', justifyContent: 'center', gap: 3, flexWrap: 'wrap', mb: 3 }}>
-            {developers.map((dev, index) => (
-              <Box
-                key={index}
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 1.5,
-                  backgroundColor: 'rgba(255,255,255,0.05)',
-                  borderRadius: 2,
-                  px: 2,
-                  py: 1,
-                  border: '1px solid rgba(255,255,255,0.1)',
-                  transition: 'all 0.3s ease',
-                  '&:hover': {
-                    backgroundColor: 'rgba(255,255,255,0.08)',
-                    transform: 'scale(1.02)',
-                  },
-                }}
-              >
-                <Avatar
+          {/* Developer Cards - Larger Cards */}
+          <Box sx={{ display: 'flex', justifyContent: 'center', gap: 4, flexWrap: 'wrap', mb: 4 }}>
+            {developers.map((dev, index) => {
+              const socialLinks = getSocialLinks(dev);
+              return (
+                <Box
+                  key={index}
                   sx={{
-                    width: 40,
-                    height: 40,
-                    fontSize: '1rem',
-                    fontWeight: 700,
-                    background: `linear-gradient(135deg, ${dev.color}, ${dev.color}88)`,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: 2,
+                    backgroundColor: 'rgba(255,255,255,0.05)',
+                    borderRadius: '15px',
+                    px: 4,
+                    py: 3,
+                    width: 250,
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    transition: 'all 0.3s ease',
+                    '&:hover': {
+                      backgroundColor: 'rgba(255,255,255,0.08)',
+                      transform: 'translateY(-5px)',
+                      boxShadow: '0 10px 30px rgba(0,0,0,0.3)',
+                    },
                   }}
                 >
-                  {dev.avatar}
-                </Avatar>
-                <Box textAlign="left">
-                  <Typography variant="body2" fontWeight={600} color="white">
-                    {dev.name}
-                  </Typography>
-                  <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.5)' }}>
-                    Developer
-                  </Typography>
+                  <Avatar
+                    src={dev.image}
+                    alt={dev.name}
+                    sx={{
+                      width: 120,
+                      height: 120,
+                      fontSize: '1.5rem',
+                      fontWeight: 700,
+                      border: `3px solid ${dev.color}`,
+                      boxShadow: `0 4px 15px ${dev.color}44`,
+                    }}
+                  >
+                    {dev.name.charAt(0)}
+                  </Avatar>
+                  <Box textAlign="center">
+                    <Typography variant="h6" fontWeight={600} color="white">
+                      {dev.name}
+                    </Typography>
+                    <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.6)' }}>
+                      {dev.name === 'Hasin' ? 'Initiator & Developer' : 'Developer'}
+                    </Typography>
+                  </Box>
+                  {socialLinks.length > 0 && (
+                    <Box sx={{ display: 'flex', gap: 1 }}>
+                      {socialLinks.map((link) => (
+                        <IconButton
+                          key={link.type}
+                          size="small"
+                          component="a"
+                          href={link.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          sx={{
+                            color: 'rgba(255,255,255,0.5)',
+                            p: 1,
+                            backgroundColor: 'rgba(255,255,255,0.05)',
+                            '&:hover': { 
+                              color: link.hoverColor,
+                              backgroundColor: 'rgba(255,255,255,0.1)',
+                            },
+                          }}
+                        >
+                          {link.icon}
+                        </IconButton>
+                      ))}
+                    </Box>
+                  )}
                 </Box>
-                <Box sx={{ display: 'flex', gap: 0.5, ml: 1 }}>
-                  <IconButton size="small" sx={{ color: 'rgba(255,255,255,0.5)', p: 0.5, '&:hover': { color: 'white' } }}>
-                    <GitHubIcon sx={{ fontSize: '1rem' }} />
-                  </IconButton>
-                  <IconButton size="small" sx={{ color: 'rgba(255,255,255,0.5)', p: 0.5, '&:hover': { color: '#0077b5' } }}>
-                    <LinkedInIcon sx={{ fontSize: '1rem' }} />
-                  </IconButton>
-                </Box>
-              </Box>
-            ))}
+              );
+            })}
           </Box>
 
           {/* University Badge - Inline */}
