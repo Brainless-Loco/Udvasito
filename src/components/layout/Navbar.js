@@ -30,7 +30,7 @@ import {
   EmojiEvents as SuccessIcon,
   Article as BlogIcon,
   Translate as TranslateIcon,
-  Favorite as HeartIcon,
+  MonitorHeart as HeartIcon,
   VolunteerActivism as VolunteerIcon,
   FormatQuote as QuoteIcon,
 } from '@mui/icons-material';
@@ -103,7 +103,7 @@ const Navbar = () => {
           <CloseIcon />
         </IconButton>
       </Box>
-      <List>
+      <List >
         {navItems.map((item) => (
           <ListItem
             button
@@ -170,7 +170,6 @@ const Navbar = () => {
               gap: 1,
               textDecoration: 'none',
               color: isScrolled ? '#e63946' : 'white',
-              flexGrow: { xs: 1, md: 0 },
             }}
           >
             <HeartIcon
@@ -193,8 +192,8 @@ const Navbar = () => {
             sx={{
               display: { xs: 'none', lg: 'flex' },
               alignItems: 'center',
+              justifyContent: 'center',
               gap: 1,
-              ml: 4,
               flexGrow: 1,
             }}
           >
