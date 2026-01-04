@@ -1,5 +1,9 @@
 import React from 'react';
-import { Box, Paper, Typography, Avatar, Chip } from '@mui/material';
+import Box from '@mui/material/Box';
+import Paper from '@mui/material/Paper';
+import Typography from '@mui/material/Typography';
+import Avatar from '@mui/material/Avatar';
+import Chip from '@mui/material/Chip';
 import {
     School as SchoolIcon,
     Groups as CommunityIcon,

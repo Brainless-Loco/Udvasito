@@ -1,14 +1,14 @@
 import React from 'react';
-import { Box, Paper, Typography, Avatar } from '@mui/material';
+import Box from '@mui/material/Box';
+import Paper from '@mui/material/Paper';
+import Typography from '@mui/material/Typography';
+import Avatar from '@mui/material/Avatar';
 import {
     Timer as TimerIcon,
     Replay as ReplayIcon,
     LocalHospital as HospitalIcon,
     Favorite as HeartIcon,
     Bloodtype as BloodIcon,
-    EmojiPeople as PeopleIcon,
-    AccessTime as ClockIcon,
-    WaterDrop as DropIcon,
 } from '@mui/icons-material';
 import { useLanguage } from '../../context';
 import { factCardStyles, factWrapperStyle } from './styles';

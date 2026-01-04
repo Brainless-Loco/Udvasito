@@ -1,5 +1,9 @@
 import React from 'react';
-import { Box, Container, Typography, Card, CardContent } from '@mui/material';
+import Box from '@mui/material/Box';
+import Container from '@mui/material/Container';
+import Typography from '@mui/material/Typography';
+import Card from '@mui/material/Card';
+import CardContent from '@mui/material/CardContent';
 import { useLanguage, useFirebase } from '../../context';
 import { BLOOD_GROUPS } from '../../config/constants';
 import { useScrollAnimation } from './hooks';
@@ -45,7 +49,7 @@ const BloodStatsSection = () => {
                 key={group}
                 sx={{
                   width: { xs: 'calc(25% - 18px)', sm: 130 },
-                  minWidth: 120,
+                  minWidth: '22%',
                   opacity: statsVisible ? 1 : 0,
                   transform: statsVisible ? 'translateY(0) rotateX(0)' : 'translateY(40px) rotateX(20deg)',
                   transition: `all 0.6s ease-out ${0.1 + index * 0.08}s`,

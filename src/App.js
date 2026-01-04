@@ -11,6 +11,7 @@ import {
   FindDonor,
   DonorRegistration,
   VolunteerRegistration,
+  AvailabilityRequest,
   About,
   FAQ,
   Testimonials,
@@ -20,6 +21,9 @@ import {
   Blogs,
   Contact,
   ProjectArchitecture,
+  Diagnostic,
+  AdminLogin,
+  AdminDashboard,
 } from './pages';
 import './App.css';
 
@@ -30,23 +34,37 @@ function App() {
       <LanguageProvider>
         <FirebaseProvider>
           <Router>
-            <Layout>
-              <Routes>
-                <Route path={ROUTES.HOME} element={<Home />} />
-                <Route path={ROUTES.FIND_DONOR} element={<FindDonor />} />
-                <Route path={ROUTES.DONOR_REGISTRATION} element={<DonorRegistration />} />
-                <Route path={ROUTES.VOLUNTEER_REGISTRATION} element={<VolunteerRegistration />} />
-                <Route path={ROUTES.ABOUT} element={<About />} />
-                <Route path={ROUTES.FAQ} element={<FAQ />} />
-                <Route path={ROUTES.TESTIMONIALS} element={<Testimonials />} />
-                <Route path={ROUTES.GALLERY} element={<Gallery />} />
-                <Route path={ROUTES.EVENTS} element={<Events />} />
-                <Route path={ROUTES.SUCCESS_STORIES} element={<SuccessStories />} />
-                <Route path={ROUTES.BLOGS} element={<Blogs />} />
-                <Route path={ROUTES.CONTACT} element={<Contact />} />
-                <Route path={ROUTES.ARCHITECTURE} element={<ProjectArchitecture />} />
-              </Routes>
-            </Layout>
+            <Routes>
+              {/* Admin Routes (without Layout) */}
+              <Route path="/special/admin" element={<AdminLogin />} />
+              <Route path="/special/admin/dashboard" element={<AdminDashboard />} />
+              <Route path="/diagnostic" element={<Diagnostic />} />
+
+              {/* User Routes (with Layout) */}
+              <Route
+                path="*"
+                element={
+                  <Layout>
+                    <Routes>
+                      <Route path={ROUTES.HOME} element={<Home />} />
+                      <Route path={ROUTES.FIND_DONOR} element={<FindDonor />} />
+                      <Route path={ROUTES.DONOR_REGISTRATION} element={<DonorRegistration />} />
+                      <Route path={ROUTES.VOLUNTEER_REGISTRATION} element={<VolunteerRegistration />} />
+                      <Route path={ROUTES.AVAILABILITY_REQUEST} element={<AvailabilityRequest />} />
+                      <Route path={ROUTES.ABOUT} element={<About />} />
+                      <Route path={ROUTES.FAQ} element={<FAQ />} />
+                      <Route path={ROUTES.TESTIMONIALS} element={<Testimonials />} />
+                      <Route path={ROUTES.GALLERY} element={<Gallery />} />
+                      <Route path={ROUTES.EVENTS} element={<Events />} />
+                      <Route path={ROUTES.SUCCESS_STORIES} element={<SuccessStories />} />
+                      <Route path={ROUTES.BLOGS} element={<Blogs />} />
+                      <Route path={ROUTES.CONTACT} element={<Contact />} />
+                      <Route path={ROUTES.ARCHITECTURE} element={<ProjectArchitecture />} />
+                    </Routes>
+                  </Layout>
+                }
+              />
+            </Routes>
           </Router>
         </FirebaseProvider>
       </LanguageProvider>

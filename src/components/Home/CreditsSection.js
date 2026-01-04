@@ -1,5 +1,10 @@
 import React from 'react';
-import { Box, Container, Typography, Avatar, IconButton } from '@mui/material';
+import Box from '@mui/material/Box';
+import Container from '@mui/material/Container';
+import Typography from '@mui/material/Typography';
+import Avatar from '@mui/material/Avatar';
+import IconButton from '@mui/material/IconButton';
+
 import {
   Code as CodeIcon,
   Favorite as HeartIcon,
@@ -20,8 +25,8 @@ const CreditsSection = () => {
       facebook: '',
     },
     {
-      name: 'Hasin',
-      image: '/assets/credit/hasin.jpg',
+      name: 'Hisan',
+      image: '/assets/credit/hisan.jpg',
       color: '#457b9d',
       github: '',
       linkedin: '',
@@ -101,7 +106,7 @@ const CreditsSection = () => {
                       {dev.name}
                     </Typography>
                     <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.6)' }}>
-                      {dev.name === 'Hasin' ? 'Initiator & Developer' : 'Developer'}
+                      {dev.name === 'Hisan' ? 'Initiator & Developer' : 'Developer'}
                     </Typography>
                   </Box>
                   {socialLinks.length > 0 && (

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Container } from '@mui/material';
+import Box from '@mui/material/Box';
+import Container from '@mui/material/Container';
 import { Search as SearchIcon } from '@mui/icons-material';
 import { useLanguage, useFirebase } from '../../context';
 import {
@@ -41,14 +42,17 @@ const FindDonor = () => {
     };
 
     const handleSearch = () => {
-        const results = searchDonors(filters);
+        // When searching, show all results without limit
+        const results = searchDonors(filters, false);
         setFilteredDonors(results);
         setSearchPerformed(true);
     };
 
     const handleReset = () => {
         setFilters(INITIAL_FILTERS);
-        setFilteredDonors(donors);
+        // When resetting, apply the 5-per-blood-group limit
+        const limitedDonors = searchDonors(INITIAL_FILTERS, true);
+        setFilteredDonors(limitedDonors);
         setSearchPerformed(false);
     };
 
@@ -72,15 +76,15 @@ const FindDonor = () => {
                     onReset={handleReset}
                 />
 
-                {/* Blood Compatibility Info */}
-                <BloodCompatibilityBanner />
-
                 {/* Results */}
                 <DonorResults
                     donors={filteredDonors}
                     loading={loading}
                     searchPerformed={searchPerformed}
                 />
+
+                {/* Blood Compatibility Info */}
+                <BloodCompatibilityBanner />
             </Container>
         </Box>
     );

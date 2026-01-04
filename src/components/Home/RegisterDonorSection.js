@@ -1,13 +1,11 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import {
-  Box,
-  Container,
-  Typography,
-  Button,
-  Grid,
-  Paper,
-} from '@mui/material';
+import Box from '@mui/material/Box';
+import Container from '@mui/material/Container';
+import Typography from '@mui/material/Typography';
+import Button from '@mui/material/Button';
+import Grid from '@mui/material/Grid';
+import Paper from '@mui/material/Paper';
 import {
   PersonAdd as PersonAddIcon,
   Favorite as HeartIcon,

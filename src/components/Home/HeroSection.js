@@ -1,13 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import {
-    Box,
-    Container,
-    Typography,
-    Button,
-    Grid,
-    Chip,
-} from '@mui/material';
+import Box from '@mui/material/Box';
+import Container from '@mui/material/Container';
+import Typography from '@mui/material/Typography';
+import Button from '@mui/material/Button';
+import Grid from '@mui/material/Grid';
+import Chip from '@mui/material/Chip';
 import {
     Search as SearchIcon,
     PersonAdd as PersonAddIcon,
@@ -81,11 +79,19 @@ const HeroSection = () => {
             <Box
                 sx={{
                     position: 'absolute',
-                    right: -100,
+                    right: -40,
                     top: '50%',
+                    width: 260,
+                    height: 440,
                     transform: `translateY(-50%) rotate(${scrollY * 0.05}deg)`,
-                    opacity: 0.1,
+                    opacity: 0.12,
+                    zIndex: 0,
                     display: { xs: 'none', lg: 'block' },
+                    '@keyframes pulse': {
+                        '0%': { transform: 'translateY(0) scale(1)', opacity: 0.9 },
+                        '50%': { transform: 'translateY(-8px) scale(1.05)', opacity: 0.6 },
+                        '100%': { transform: 'translateY(0) scale(1)', opacity: 0.9 },
+                    },
                 }}
             >
                 {[...Array(10)].map((_, i) => (
@@ -97,8 +103,8 @@ const HeroSection = () => {
                             borderRadius: '50%',
                             backgroundColor: 'white',
                             position: 'absolute',
-                            left: Math.sin(i * 0.8) * 50 + 50,
-                            top: i * 40,
+                            left: `${Math.sin(i * 0.8) * 50 + 50}px`,
+                            top: `${i * 40}px`,
                             animation: `pulse 2s ease-in-out infinite`,
                             animationDelay: `${i * 0.1}s`,
                         }}

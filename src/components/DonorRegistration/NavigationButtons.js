@@ -1,5 +1,7 @@
 import React from 'react';
-import { Box, Button, CircularProgress } from '@mui/material';
+import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
+import CircularProgress from '@mui/material/CircularProgress';
 import { useLanguage } from '../../context';
 
 const NavigationButtons = ({ 
@@ -7,7 +9,8 @@ const NavigationButtons = ({
     totalSteps, 
     onBack, 
     onNext, 
-    loading 
+    loading,
+    isStepValid = true
 }) => {
     const { t } = useLanguage();
     const isLastStep = activeStep === totalSteps - 1;
@@ -45,7 +48,7 @@ const NavigationButtons = ({
                 <Button
                     type="submit"
                     variant="contained"
-                    disabled={loading}
+                    disabled={loading || !isStepValid}
                     sx={{
                         px: 6,
                         py: 1.5,
@@ -54,9 +57,12 @@ const NavigationButtons = ({
                         fontWeight: 600,
                         fontSize: '1rem',
                         boxShadow: '0 4px 15px rgba(230, 57, 70, 0.3)',
-                        '&:hover': {
+                        '&:hover:not(:disabled)': {
                             background: 'linear-gradient(135deg, #c1121f 0%, #a00d1a 100%)',
                             boxShadow: '0 6px 20px rgba(230, 57, 70, 0.4)',
+                        },
+                        '&:disabled': {
+                            opacity: 0.6,
                         },
                     }}
                 >
@@ -69,6 +75,7 @@ const NavigationButtons = ({
             ) : (
                 <Button
                     onClick={onNext}
+                    disabled={!isStepValid}
                     variant="contained"
                     sx={{
                         px: 6,
@@ -76,8 +83,11 @@ const NavigationButtons = ({
                         borderRadius: 2,
                         bgcolor: '#1d3557',
                         fontWeight: 600,
-                        '&:hover': {
+                        '&:hover:not(:disabled)': {
                             bgcolor: '#152536',
+                        },
+                        '&:disabled': {
+                            opacity: 0.6,
                         },
                     }}
                 >

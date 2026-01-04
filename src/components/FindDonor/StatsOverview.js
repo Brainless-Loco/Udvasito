@@ -1,13 +1,10 @@
 import React from 'react';
+import Box from '@mui/material/Box';
+import Paper from '@mui/material/Paper';
+import Typography from '@mui/material/Typography';
+import Avatar from '@mui/material/Avatar';
 import {
-    Box,
-    Paper,
-    Typography,
-    Chip,
-    Avatar,
-} from '@mui/material';
-import {
-    Bloodtype as BloodIcon,
+    // Bloodtype as BloodIcon,
     People as PeopleIcon,
     CheckCircle as AvailableIcon,
     Favorite as HeartIcon,
@@ -28,7 +25,7 @@ const StatsOverview = ({ stats, totalDonors }) => {
         },
         {
             icon: <AvailableIcon />,
-            value: stats?.availableDonors || 0,
+            value: stats?.available || 0,
             label: t.search.availableNow || 'Available Now',
             color: '#28a745',
             bgColor: '#e8f5e9',

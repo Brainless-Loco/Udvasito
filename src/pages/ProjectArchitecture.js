@@ -1,16 +1,15 @@
 import React from 'react';
-import {
-  Box,
-  Container,
-  Typography,
-  Paper,
-  Grid,
-  List,
-  ListItem,
-  ListItemIcon,
-  ListItemText,
-  Chip,
-} from '@mui/material';
+import Box from '@mui/material/Box';
+import Container from '@mui/material/Container';
+import Typography from '@mui/material/Typography';
+import Paper from '@mui/material/Paper';
+import Grid from '@mui/material/Grid';
+import List from '@mui/material/List';
+import ListItem from '@mui/material/ListItem';
+import ListItemIcon from '@mui/material/ListItemIcon';
+import ListItemText from '@mui/material/ListItemText';
+import Chip from '@mui/material/Chip';
+
 import {
   Architecture as ArchitectureIcon,
   Folder as FolderIcon,

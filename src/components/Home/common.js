@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Box } from '@mui/material';
+import Box from '@mui/material/Box';
 import { useScrollAnimation } from './hooks';
 
 // Parallax component
@@ -67,6 +67,12 @@ export const AnimatedCounter = ({ end, duration = 2000, suffix = '' }) => {
 
   useEffect(() => {
     if (isVisible && count === 0) {
+      // For very small target numbers, don't animate frame-by-frame — set directly
+      if (typeof end === 'number' && end <= 10) {
+        setCount(end);
+        return;
+      }
+
       let start = 0;
       const increment = end / (duration / 16);
       const timer = setInterval(() => {

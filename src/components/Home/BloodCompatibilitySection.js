@@ -1,6 +1,11 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Box, Container, Typography, Grid, Chip, Button } from '@mui/material';
+import Box from '@mui/material/Box';
+import Container from '@mui/material/Container';
+import Typography from '@mui/material/Typography';
+import Grid from '@mui/material/Grid';
+import Chip from '@mui/material/Chip';
+import Button from '@mui/material/Button';
 import {
   Bloodtype as BloodIcon,
   Favorite as HeartIcon,

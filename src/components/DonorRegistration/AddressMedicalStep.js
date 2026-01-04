@@ -1,17 +1,16 @@
 import React from 'react';
-import {
-    Box,
-    TextField,
-    Paper,
-    Typography,
-    InputAdornment,
-    Avatar,
-    FormControlLabel,
-    Radio,
-    RadioGroup,
-    FormControl,
-    FormLabel,
-} from '@mui/material';
+
+import Box from '@mui/material/Box';
+import TextField from '@mui/material/TextField';
+import Paper from '@mui/material/Paper';
+import Typography from '@mui/material/Typography';
+import InputAdornment from '@mui/material/InputAdornment';
+import Avatar from '@mui/material/Avatar';
+import FormControlLabel from '@mui/material/FormControlLabel';
+import Radio from '@mui/material/Radio';
+import RadioGroup from '@mui/material/RadioGroup';
+import FormControl from '@mui/material/FormControl';
+import FormLabel from '@mui/material/FormLabel';
 import {
     Home as HomeIcon,
     MedicalServices as MedicalIcon,

@@ -1,22 +1,20 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import {
-  AppBar,
-  Toolbar,
-  Typography,
-  Button,
-  IconButton,
-  Drawer,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemIcon,
-  Box,
-  useScrollTrigger,
-  Menu,
-  MenuItem,
-  Divider,
-} from '@mui/material';
+import AppBar from '@mui/material/AppBar';
+import Toolbar from '@mui/material/Toolbar';
+import Typography from '@mui/material/Typography';
+import Button from '@mui/material/Button';
+import IconButton from '@mui/material/IconButton';
+import Drawer from '@mui/material/Drawer';
+import List from '@mui/material/List';
+import ListItem from '@mui/material/ListItem';
+import ListItemText from '@mui/material/ListItemText';
+import ListItemIcon from '@mui/material/ListItemIcon';
+import Box from '@mui/material/Box';
+import useScrollTrigger from '@mui/material/useScrollTrigger';
+import Menu from '@mui/material/Menu';
+import MenuItem from '@mui/material/MenuItem';
+import Divider from '@mui/material/Divider';
 import {
   Menu as MenuIcon,
   Close as CloseIcon,
@@ -30,10 +28,10 @@ import {
   EmojiEvents as SuccessIcon,
   Article as BlogIcon,
   Translate as TranslateIcon,
-  MonitorHeart as HeartIcon,
   VolunteerActivism as VolunteerIcon,
   FormatQuote as QuoteIcon,
   MoreHoriz as MoreIcon,
+  Edit as EditIcon,
 } from '@mui/icons-material';
 import { useLanguage } from '../../context';
 import { ROUTES } from '../../config/constants';
@@ -109,7 +107,16 @@ const Navbar = () => {
         }}
       >
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <HeartIcon sx={{ animation: 'pulse 1.5s infinite' }} />
+          {/* place the logo red here */}
+          <Box
+            component="img"
+            src="/assets/logo-white.png"
+            alt="UDVASITO"
+            sx={{
+              height: '2rem',
+              width: 'auto',
+            }}
+          />
           <Typography variant="h6" fontWeight={800}>
             UDVASITO
           </Typography>
@@ -153,6 +160,18 @@ const Navbar = () => {
         <ListItem
           button
           component={Link}
+          to={ROUTES.AVAILABILITY_REQUEST}
+          onClick={handleDrawerToggle}
+        >
+          <ListItemIcon>
+            <EditIcon />
+          </ListItemIcon>
+          <ListItemText primary="Update Availability" />
+        </ListItem>
+        <Divider sx={{ my: 1 }} />
+        <ListItem
+          button
+          component={Link}
           to={ROUTES.VOLUNTEER_REGISTRATION}
           onClick={handleDrawerToggle}
         >
@@ -182,24 +201,38 @@ const Navbar = () => {
             sx={{
               display: 'flex',
               alignItems: 'center',
-              gap: 1,
+              gap: 1.5,
               textDecoration: 'none',
               color: isScrolled ? '#e63946' : 'white',
             }}
           >
-            <HeartIcon
+            <Box
+              component="img"
+              src={isScrolled ? '/assets/logo-red.png' : '/assets/logo-white.png'}
+              alt="UDVASITO"
               sx={{
-                fontSize: '2rem',
-                animation: 'pulse 1.5s infinite',
-                '@keyframes pulse': {
-                  '0%, 100%': { transform: 'scale(1)' },
-                  '50%': { transform: 'scale(1.1)' },
-                },
+                height: '2.5rem',
+                width: 'auto',
+                transition: 'all 0.3s ease',
               }}
             />
-            <Typography variant="h5" fontWeight={800}>
-              UDVASITO
-            </Typography>
+            <Box className="mt-auto">
+              <Typography variant="h5" fontWeight={800} sx={{ lineHeight: 0 }}>
+                UDVASITO
+              </Typography>
+              <Typography
+                variant="caption"
+                sx={{
+                  fontSize: '0.7rem',
+                  marginTop: '-4px',
+                  fontWeight: 600,
+                  color: isScrolled ? '#e63946' : 'rgba(255,255,255,0.9)',
+                  transition: 'color 0.3s ease',
+                }}
+              >
+                Blood Donor Directory
+              </Typography>
+            </Box>
           </Box>
 
           {/* Desktop Navigation */}
@@ -308,6 +341,18 @@ const Navbar = () => {
                       </Typography>
                     </MenuItem>
                   ))}
+                  <Divider sx={{ my: 1 }} />
+                  <MenuItem
+                    component={Link}
+                    to={ROUTES.AVAILABILITY_REQUEST}
+                    onClick={handleMoreClose}
+                    sx={{ gap: 1.5, py: 1.5, px: 2.5 }}
+                  >
+                    <ListItemIcon sx={{ minWidth: 'auto' }}>
+                      <EditIcon />
+                    </ListItemIcon>
+                    <Typography>Update Availability</Typography>
+                  </MenuItem>
                   <Divider sx={{ my: 1 }} />
                   <MenuItem
                     component={Link}

@@ -1,12 +1,10 @@
 import React from 'react';
-import {
-    Box,
-    TextField,
-    MenuItem,
-    Typography,
-    InputAdornment,
-    Avatar,
-} from '@mui/material';
+import Box from '@mui/material/Box';
+import TextField from '@mui/material/TextField';
+import MenuItem from '@mui/material/MenuItem';
+import Typography from '@mui/material/Typography';
+import InputAdornment from '@mui/material/InputAdornment';
+import Avatar from '@mui/material/Avatar';
 import {
     School as SchoolIcon,
     Badge as BadgeIcon,

@@ -1,5 +1,8 @@
 import React from 'react';
-import { Box, Typography, Button, Avatar } from '@mui/material';
+import Box from '@mui/material/Box';
+import Typography from '@mui/material/Typography';
+import Button from '@mui/material/Button';
+import Avatar from '@mui/material/Avatar';
 import {
     PersonAdd as RegisterIcon,
     Search as SearchIcon,

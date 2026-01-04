@@ -1,15 +1,18 @@
  import React, { useState } from 'react';
-import {
-    Box,
-    Paper,
-    Stepper,
-    Step,
-    StepLabel,
-} from '@mui/material';
-import { PersonAdd as PersonAddIcon } from '@mui/icons-material';
+
+import Box from '@mui/material/Box';
+import Paper from '@mui/material/Paper';
+import Button from '@mui/material/Button';
+import Stepper from '@mui/material/Stepper';
+import Step from '@mui/material/Step';
+import StepLabel from '@mui/material/StepLabel';
+
+import { PersonAdd as PersonAddIcon, Edit as EditIcon } from '@mui/icons-material';
+import { Link } from 'react-router-dom';
 import Swal from 'sweetalert2';
 import { useLanguage, useFirebase } from '../../context';
 import { sendDonorWelcomeEmail } from '../../services/emailService';
+import { ROUTES } from '../../config/constants';
 import { 
     SectionHeader,
     BenefitsSidebar,
@@ -59,8 +62,36 @@ const DonorRegistration = () => {
         }));
     };
 
+    // Validation function for each step
+    const validateStep = (stepIndex) => {
+        switch (stepIndex) {
+            case 0: // Personal Info
+                return !!(
+                    formData.fullName &&
+                    formData.email &&
+                    formData.phone &&
+                    formData.bloodGroup &&
+                    formData.dateOfBirth &&
+                    formData.gender
+                );
+            case 1: // Institution
+                return !!(
+                    formData.institution &&
+                    (formData.institution !== 'Other' || formData.otherInstitution) &&
+                    formData.department &&
+                    (formData.department !== 'Other' || formData.otherDepartment)
+                );
+            case 2: // Address & Medical
+                return !!formData.currentAddress;
+            default:
+                return false;
+        }
+    };
+
     const handleNext = () => {
-        setActiveStep((prev) => prev + 1);
+        if (validateStep(activeStep)) {
+            setActiveStep((prev) => prev + 1);
+        }
     };
 
     const handleBack = () => {
@@ -72,8 +103,23 @@ const DonorRegistration = () => {
         setLoading(true);
 
         try {
+            // Convert DD/MM/YYYY to ISO string for Firebase
+            const convertDateFormat = (dateStr) => {
+                if (!dateStr) return '';
+                
+                // Check if it's DD/MM/YYYY format
+                if (dateStr.includes('/')) {
+                    const [day, month, year] = dateStr.split('/');
+                    if (day && month && year && day.length === 2 && month.length === 2 && year.length === 4) {
+                        return `${year}-${month}-${day}`;
+                    }
+                }
+                return dateStr; // Return as-is if already in correct format
+            };
+
             const donorData = {
                 ...formData,
+                dateOfBirth: convertDateFormat(formData.dateOfBirth),
                 institution: formData.institution === 'Other' ? formData.otherInstitution : formData.institution,
                 department: formData.department === 'Other' ? formData.otherDepartment : formData.department,
                 hasDonatedBefore: formData.hasDonatedBefore === 'yes',
@@ -182,10 +228,54 @@ const DonorRegistration = () => {
                                     onBack={handleBack}
                                     onNext={handleNext}
                                     loading={loading}
+                                    isStepValid={validateStep(activeStep)}
                                 />
                             </form>
                         </Paper>
                     </Box>
+                </Box>
+
+                {/* Update Availability Button */}
+                <Box sx={{ mt: 4, textAlign: 'center' }}>
+                    <Paper
+                        sx={{
+                            p: 3,
+                            borderRadius: 3,
+                            background: 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)',
+                            border: '2px dashed #dee2e6',
+                            textAlign: 'center',
+                        }}
+                    >
+                        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+                            <EditIcon sx={{ fontSize: '2.5rem', color: '#457b9d' }} />
+                            <Box>
+                                <Box sx={{ fontSize: '1.1rem', fontWeight: 600, color: '#1d3557', mb: 1 }}>
+                                    Need to Update Your Availability Status?
+                                </Box>
+                                <Box sx={{ fontSize: '0.9rem', color: '#6c757d', mb: 2 }}>
+                                    Change your blood donor availability status anytime
+                                </Box>
+                            </Box>
+                            <Button
+                                component={Link}
+                                to={ROUTES.AVAILABILITY_REQUEST}
+                                variant="contained"
+                                startIcon={<EditIcon />}
+                                sx={{
+                                    background: 'linear-gradient(135deg, #457b9d 0%, #2a6a7a 100%)',
+                                    px: 4,
+                                    py: 1.2,
+                                    borderRadius: 2,
+                                    fontWeight: 600,
+                                    '&:hover': {
+                                        background: 'linear-gradient(135deg, #2a6a7a 0%, #1d5566 100%)',
+                                    },
+                                }}
+                            >
+                                Update Availability Status
+                            </Button>
+                        </Box>
+                    </Paper>
                 </Box>
             </Box>
         </Box>

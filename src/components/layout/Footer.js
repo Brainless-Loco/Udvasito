@@ -1,8 +1,12 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Box, Container, Typography, Grid, IconButton, Divider } from '@mui/material';
+import Box from '@mui/material/Box';
+import Container from '@mui/material/Container';
+import Typography from '@mui/material/Typography';
+import Grid from '@mui/material/Grid';
+import Divider from '@mui/material/Divider';
+import IconButton from '@mui/material/IconButton';
 import {
-  Favorite as HeartIcon,
   Facebook as FacebookIcon,
   Twitter as TwitterIcon,
   Instagram as InstagramIcon,
@@ -44,15 +48,13 @@ const Footer = () => {
           {/* Brand Section */}
           <Grid item xs={12} md={4}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-              <HeartIcon
+              <Box
+                component="img"
+                src="/assets/logo-red.png"
+                alt="UDVASITO"
                 sx={{
-                  fontSize: '2rem',
-                  color: '#e63946',
-                  animation: 'pulse 1.5s infinite',
-                  '@keyframes pulse': {
-                    '0%, 100%': { transform: 'scale(1)' },
-                    '50%': { transform: 'scale(1.1)' },
-                  },
+                  height: '2.5rem',
+                  width: 'auto',
                 }}
               />
               <Typography variant="h5" fontWeight={800}>
@@ -174,7 +176,7 @@ const Footer = () => {
             }}
           >
             <CodeIcon fontSize="small" />
-            {t.footer.developedBy} <strong>Tonmoy and Hasin</strong>
+            {t.footer.developedBy} <strong>Tonmoy and Hisan</strong>
             {/* {t.footer.department} */}
           </Typography>
           <Typography variant="body2" sx={{ opacity: 0.7 }}>

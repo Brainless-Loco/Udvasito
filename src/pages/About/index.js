@@ -1,6 +1,7 @@
 import React from 'react';
-import { Box, Container } from '@mui/material';
-import { useLanguage, useFirebase } from '../../context';
+import Box from '@mui/material/Box';
+import Container from '@mui/material/Container';
+import { useFirebase } from '../../context';
 import {
     AboutHero,
     MissionVisionCards,
@@ -11,7 +12,7 @@ import {
 import { aboutPageStyles } from '../../components/About/styles';
 
 const About = () => {
-    const { t } = useLanguage();
+    // const { t } = useLanguage();
     const { stats } = useFirebase();
 
     return (

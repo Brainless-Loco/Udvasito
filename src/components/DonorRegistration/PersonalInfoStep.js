@@ -1,13 +1,11 @@
 import React from 'react';
-import {
-    Box,
-    TextField,
-    MenuItem,
-    Typography,
-    InputAdornment,
-    Chip,
-    Avatar,
-} from '@mui/material';
+import Box from '@mui/material/Box';
+import TextField from '@mui/material/TextField';
+import MenuItem from '@mui/material/MenuItem';
+import Typography from '@mui/material/Typography';
+import InputAdornment from '@mui/material/InputAdornment';
+import Chip from '@mui/material/Chip';
+import Avatar from '@mui/material/Avatar';
 import {
     Person as PersonIcon,
     Email as EmailIcon,
@@ -148,11 +146,29 @@ const PersonalInfoStep = ({ formData, handleChange }) => {
                     <TextField
                         fullWidth
                         required
-                        type="date"
                         label={t.form.dateOfBirth}
                         name="dateOfBirth"
+                        placeholder="DD/MM/YYYY"
                         value={formData.dateOfBirth}
-                        onChange={handleChange}
+                        onChange={(e) => {
+                            const value = e.target.value;
+                            // Allow only numbers and slashes
+                            const filtered = value.replace(/[^\d/]/g, '');
+                            
+                            // Auto-format DD/MM/YYYY
+                            let formatted = filtered;
+                            if (filtered.length === 2 && !filtered.includes('/')) {
+                                formatted = filtered + '/';
+                            } else if (filtered.length === 5 && (filtered.match(/\//g) || []).length === 1) {
+                                formatted = filtered + '/';
+                            }
+                            
+                            // Call original handler with formatted value
+                            handleChange({
+                                target: { name: 'dateOfBirth', value: formatted }
+                            });
+                        }}
+                        helperText="Format: DD/MM/YYYY (e.g., 25/12/1995)"
                         InputLabelProps={{ shrink: true }}
                         InputProps={{
                             startAdornment: (
@@ -160,6 +176,7 @@ const PersonalInfoStep = ({ formData, handleChange }) => {
                                     <CakeIcon sx={{ color: '#1d3557' }} />
                                 </InputAdornment>
                             ),
+                            maxLength: 10,
                         }}
                         sx={textFieldStyle}
                     />

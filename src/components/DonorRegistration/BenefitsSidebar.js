@@ -1,14 +1,12 @@
 import React from 'react';
-import {
-    Box,
-    Paper,
-    Typography,
-    List,
-    ListItem,
-    ListItemIcon,
-    ListItemText,
-    Divider,
-} from '@mui/material';
+import Box from '@mui/material/Box';
+import Paper from '@mui/material/Paper';
+import Typography from '@mui/material/Typography';
+import List from '@mui/material/List';
+import ListItem from '@mui/material/ListItem';
+import ListItemIcon from '@mui/material/ListItemIcon';
+import ListItemText from '@mui/material/ListItemText';
+import Divider from '@mui/material/Divider';
 import {
     Favorite as HeartIcon,
     LocalHospital as HospitalIcon,

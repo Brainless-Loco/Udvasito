@@ -1,10 +1,8 @@
 import React from 'react';
-import {
-    Box,
-    Paper,
-    Typography,
-    Chip,
-} from '@mui/material';
+import Box from '@mui/material/Box';
+import Paper from '@mui/material/Paper';
+import Typography from '@mui/material/Typography';
+import Chip from '@mui/material/Chip';
 import {
     Search as SearchIcon,
     SentimentDissatisfied as SadIcon,
@@ -67,7 +65,7 @@ const DonorResults = ({ donors, loading, searchPerformed }) => {
                         <Box
                             key={donor.id}
                             sx={{
-                                width: { xs: '100%', sm: '50%', md: '33.333%' },
+                                width: { xs: '100%', sm: '50%', md: '25%' },
                                 p: 1.5,
                                 boxSizing: 'border-box',
                             }}

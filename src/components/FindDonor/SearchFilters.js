@@ -1,16 +1,15 @@
 import React from 'react';
-import {
-    Box,
-    Paper,
-    TextField,
-    MenuItem,
-    Button,
-    Typography,
-    InputAdornment,
-    Avatar,
-    Collapse,
-    IconButton,
-} from '@mui/material';
+import Box from '@mui/material/Box';
+import Paper from '@mui/material/Paper';
+import TextField from '@mui/material/TextField';
+import MenuItem from '@mui/material/MenuItem';
+import Button from '@mui/material/Button';
+import Typography from '@mui/material/Typography';
+import InputAdornment from '@mui/material/InputAdornment';
+import Avatar from '@mui/material/Avatar';
+import Collapse from '@mui/material/Collapse';
+import IconButton from '@mui/material/IconButton';
+
 import {
     Search as SearchIcon,
     Refresh as RefreshIcon,
@@ -22,7 +21,7 @@ import {
     ExpandLess as ExpandLessIcon,
 } from '@mui/icons-material';
 import { useLanguage } from '../../context';
-import { BLOOD_GROUPS, GENDER_OPTIONS } from '../../config/constants';
+import { BLOOD_GROUPS, GENDER_OPTIONS, DEPARTMENTS_CU } from '../../config/constants';
 import {
     filterPaperStyles,
     textFieldStyles,
@@ -108,11 +107,11 @@ const SearchFilters = ({
                     <Box sx={filterInputWrapperStyle}>
                         <TextField
                             fullWidth
+                            select
                             label={t.search.department}
                             name="department"
                             value={filters.department}
                             onChange={onFilterChange}
-                            placeholder={t.search.searchDepartment}
                             sx={textFieldStyles}
                             InputProps={{
                                 startAdornment: (
@@ -121,7 +120,14 @@ const SearchFilters = ({
                                     </InputAdornment>
                                 ),
                             }}
-                        />
+                        >
+                            <MenuItem value="">{t.search.allDepartments || 'All Departments'}</MenuItem>
+                            {DEPARTMENTS_CU.map((dept) => (
+                                <MenuItem key={dept} value={dept}>
+                                    {dept}
+                                </MenuItem>
+                            ))}
+                        </TextField>
                     </Box>
 
                     {/* Address */}
