@@ -28,10 +28,16 @@ const FindDonor = () => {
     const [filters, setFilters] = useState(INITIAL_FILTERS);
     const [filteredDonors, setFilteredDonors] = useState([]);
     const [searchPerformed, setSearchPerformed] = useState(false);
+    const [prevDonorsLength, setPrevDonorsLength] = useState(0);
 
     useEffect(() => {
-        setFilteredDonors(donors);
-    }, [donors]);
+        // Only update when donor list size actually changes, not on every poll
+        if (!searchPerformed && donors.length !== prevDonorsLength) {
+            const limitedDonors = searchDonors(INITIAL_FILTERS, true);
+            setFilteredDonors(limitedDonors);
+            setPrevDonorsLength(donors.length);
+        }
+    }, [donors.length, searchPerformed, prevDonorsLength]);
 
     const handleFilterChange = (e) => {
         const { name, value } = e.target;

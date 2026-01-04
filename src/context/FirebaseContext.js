@@ -149,9 +149,10 @@ export const FirebaseProvider = ({ children }) => {
   // Real-time listener for donors
   const subscribeToDonors = () => {
     // Using a polling approach since Firestore doesn't support real-time listeners across collections
+    // Poll every 30 seconds instead of 5 to reduce server load and re-renders
     const interval = setInterval(() => {
       fetchDonors();
-    }, 5000);
+    }, 60000);
 
     return () => {
       clearInterval(interval);
@@ -370,9 +371,9 @@ export const FirebaseProvider = ({ children }) => {
   useEffect(() => {
     // Fetch donors immediately on mount
     fetchDonors();
-    // Then set up polling
-    const unsubscribe = subscribeToDonors();
-    return () => unsubscribe();
+    // Don't set up polling - fetch on demand only to prevent continuous fetching
+    // Users can refresh manually or data updates when they perform actions
+    return () => {};
     // eslint-disable-next-line
   }, []);
 
