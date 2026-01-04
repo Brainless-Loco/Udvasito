@@ -37,6 +37,7 @@ const FindDonor = () => {
             setFilteredDonors(limitedDonors);
             setPrevDonorsLength(donors.length);
         }
+        // eslint-disable-next-line
     }, [donors.length, searchPerformed, prevDonorsLength]);
 
     const handleFilterChange = (e) => {

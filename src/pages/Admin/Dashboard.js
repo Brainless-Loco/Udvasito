@@ -172,10 +172,11 @@ const AdminDashboard = () => {
                 }
             }
 
-            console.log('\n✅ Total donors fetched:', allDonors.length);
+            // console.log('\n✅ Total donors fetched:', allDonors.length);
             console.timeEnd('Dashboard Load Time');
 
             // Fetch availability requests in parallel with stats
+            // eslint-disable-next-line
             const [statsData, reqDocs] = await Promise.all([
                 getDoc(doc(db, 'stats', 'global')).catch(() => null),
                 getDocs(collection(db, 'availabilityRequests')),

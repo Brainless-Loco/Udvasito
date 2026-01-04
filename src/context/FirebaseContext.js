@@ -146,18 +146,7 @@ export const FirebaseProvider = ({ children }) => {
     }
   };
 
-  // Real-time listener for donors
-  const subscribeToDonors = () => {
-    // Using a polling approach since Firestore doesn't support real-time listeners across collections
-    // Poll every 30 seconds instead of 5 to reduce server load and re-renders
-    const interval = setInterval(() => {
-      fetchDonors();
-    }, 60000);
-
-    return () => {
-      clearInterval(interval);
-    };
-  };
+  
 
   // Add a new donor with new structure: /donors/{uniName}/{deptShortForm}/{donorId}
   const addDonor = async (donorData) => {
