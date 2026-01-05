@@ -86,24 +86,24 @@ export const FirebaseProvider = ({ children }) => {
   const fetchDonors = async () => {
     try {
       setLoading(true);
-      console.log('=== FETCHING DONORS FROM NEW STRUCTURE ===');
-      console.log('Structure: /donors/{uniName}/{deptShortForm}/{donorId}');
+      // console.log('=== FETCHING DONORS FROM NEW STRUCTURE ===');
+      // console.log('Structure: /donors/{uniName}/{deptShortForm}/{donorId}');
       
       const donorsRef = collection(db, 'donors');
       const uniDocs = await getDocs(donorsRef);
       const donorsList = [];
 
-      console.log('📚 Universities found:', uniDocs.docs.length);
+      // console.log('📚 Universities found:', uniDocs.docs.length);
 
       for (const uniDoc of uniDocs.docs) {
         const uniName = uniDoc.id;
-        console.log(`\n📍 Processing university: ${uniName}`);
+        // console.log(`\n📍 Processing university: ${uniName}`);
         
         // Get all department collections under this university
         // Department collections are stored directly under the university document
         const departmentShortForms = Object.values(DEPARTMENT_SHORT_FORMS);
 
-        console.log(`   Checking ${departmentShortForms.length} possible departments...`);
+        // console.log(`   Checking ${departmentShortForms.length} possible departments...`);
 
         for (const deptShortForm of departmentShortForms) {
           try {
@@ -112,7 +112,7 @@ export const FirebaseProvider = ({ children }) => {
             
             if (donorDocs.docs.length > 0) {
               const fullDepartmentName = getDepartmentDisplayName(deptShortForm);
-              console.log(`   📂 ${deptShortForm} (${fullDepartmentName}): ${donorDocs.docs.length} donors`);
+              // console.log(`   📂 ${deptShortForm} (${fullDepartmentName}): ${donorDocs.docs.length} donors`);
 
               donorDocs.forEach((donorDoc) => {
                 const donorData = {
@@ -259,7 +259,7 @@ export const FirebaseProvider = ({ children }) => {
   };
 
   // Search donors with filters
-  const searchDonors = (filters) => {
+  const searchDonors = (filters, limit = true) => {
     let filtered = [...donors];
 
     if (filters.bloodGroup) {
@@ -301,6 +301,11 @@ export const FirebaseProvider = ({ children }) => {
     if (filters.hasDonatedBefore !== undefined && filters.hasDonatedBefore !== '') {
       const donated = filters.hasDonatedBefore === 'true' || filters.hasDonatedBefore === true;
       filtered = filtered.filter((d) => d.hasDonatedBefore === donated);
+    }
+
+    // If limit is false, return all results
+    if (!limit) {
+      return filtered;
     }
 
     // Limit to 5 available donors per blood group
@@ -358,10 +363,8 @@ export const FirebaseProvider = ({ children }) => {
   const fetchTestimonials = () => fetchCollection(testimonialsCollection);
 
   useEffect(() => {
-    // Fetch donors immediately on mount
-    fetchDonors();
-    // Don't set up polling - fetch on demand only to prevent continuous fetching
-    // Users can refresh manually or data updates when they perform actions
+    // Only fetch stats on mount - donors are fetched on demand by find-donor page
+    fetchStats();
     return () => {};
     // eslint-disable-next-line
   }, []);

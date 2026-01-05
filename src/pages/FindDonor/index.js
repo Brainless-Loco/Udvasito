@@ -23,12 +23,18 @@ const INITIAL_FILTERS = {
 
 const FindDonor = () => {
     const { t } = useLanguage();
-    const { donors, loading, searchDonors, stats } = useFirebase();
+    const { donors, loading, searchDonors, stats, fetchDonors } = useFirebase();
 
     const [filters, setFilters] = useState(INITIAL_FILTERS);
     const [filteredDonors, setFilteredDonors] = useState([]);
     const [searchPerformed, setSearchPerformed] = useState(false);
     const [prevDonorsLength, setPrevDonorsLength] = useState(0);
+
+    // Fetch donors when component mounts
+    useEffect(() => {
+        fetchDonors();
+        // eslint-disable-next-line
+    }, []);
 
     useEffect(() => {
         // Only update when donor list size actually changes, not on every poll
