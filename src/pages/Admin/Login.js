@@ -15,7 +15,6 @@ import {
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
-import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
 import { collection, getDocs, query, where } from 'firebase/firestore';
 import { db } from '../../config/firebase';
 
@@ -32,38 +31,53 @@ const AdminLogin = () => {
         setError('');
 
         try {
-            const auth = getAuth();
-            const userCredential = await signInWithEmailAndPassword(auth, email, password);
-            const user = userCredential.user;
-
-            // Check if user is an admin
+            // Query admins collection for email and password match
             const adminsRef = collection(db, 'admins');
-            const q = query(adminsRef, where('uid', '==', user.uid));
+            const q = query(adminsRef, where('email', '==', email.toLowerCase().trim()));
             const querySnapshot = await getDocs(q);
 
             if (querySnapshot.empty) {
-                await auth.signOut();
-                setError('You do not have admin access.');
+                setError('Invalid email or password.');
                 Swal.fire({
                     icon: 'error',
-                    title: 'Access Denied',
-                    text: 'Your account does not have admin privileges.',
+                    title: 'Login Failed',
+                    text: 'Invalid email or password.',
                     confirmButtonColor: '#e63946',
                 });
+                setLoading(false);
                 return;
             }
 
-            // Admin verified
+            // Check if password matches
+            const adminDoc = querySnapshot.docs[0];
+            const adminData = adminDoc.data();
+
+            if (adminData.password !== password) {
+                setError('Invalid email or password.');
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Login Failed',
+                    text: 'Invalid email or password.',
+                    confirmButtonColor: '#e63946',
+                });
+                setLoading(false);
+                return;
+            }
+
+            // Admin verified - set session with 12 hour expiration
+            const expiryTime = new Date().getTime() + (12 * 60 * 60 * 1000); // 12 hours
             localStorage.setItem('adminAuth', JSON.stringify({
-                uid: user.uid,
-                email: user.email,
+                id: adminDoc.id,
+                email: adminData.email,
+                name: adminData.name || 'Admin',
                 timestamp: new Date().getTime(),
+                expiryTime: expiryTime,
             }));
 
             Swal.fire({
                 icon: 'success',
                 title: 'Welcome Admin!',
-                text: `Logged in as ${user.email}`,
+                text: `Logged in as ${adminData.email}`,
                 confirmButtonColor: '#1d3557',
                 timer: 1500,
             });

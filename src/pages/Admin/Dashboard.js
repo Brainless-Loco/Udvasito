@@ -43,7 +43,6 @@ import {
     Bloodtype as BloodtypeIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
-import { getAuth, signOut } from 'firebase/auth';
 import { collection, getDocs, updateDoc, deleteDoc, doc, getDoc, increment, setDoc } from 'firebase/firestore';
 import { db } from '../../config/firebase';
 import { getDepartmentDisplayName } from '../../utils/departmentHelper';
@@ -86,7 +85,29 @@ const AdminDashboard = () => {
             navigate('/special/admin');
             return;
         }
-        fetchData();
+
+        try {
+            const authData = JSON.parse(adminAuth);
+            
+            // Check if session has expired (12 hours)
+            if (authData.expiryTime && new Date().getTime() > authData.expiryTime) {
+                localStorage.removeItem('adminAuth');
+                Swal.fire({
+                    icon: 'info',
+                    title: 'Session Expired',
+                    text: 'Your admin session has expired. Please login again.',
+                    confirmButtonColor: '#1d3557',
+                });
+                navigate('/special/admin');
+                return;
+            }
+
+            fetchData();
+        } catch (error) {
+            console.error('Auth validation error:', error);
+            localStorage.removeItem('adminAuth');
+            navigate('/special/admin');
+        }
     }, [navigate]);
 
     // Helper function to sanitize for ID
@@ -250,9 +271,14 @@ const AdminDashboard = () => {
 
     const handleLogout = async () => {
         try {
-            const auth = getAuth();
-            await signOut(auth);
             localStorage.removeItem('adminAuth');
+            Swal.fire({
+                icon: 'success',
+                title: 'Logged Out',
+                text: 'You have been logged out successfully.',
+                confirmButtonColor: '#1d3557',
+                timer: 1000,
+            });
             navigate('/special/admin');
         } catch (error) {
             console.error('Logout error:', error);
