@@ -40,14 +40,16 @@ import {
     People as PeopleIcon,
     School as SchoolIcon,
     Notifications as NotificationsIcon,
+    Bloodtype as BloodtypeIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { getAuth, signOut } from 'firebase/auth';
-import { collection, getDocs, updateDoc, deleteDoc, doc, getDoc, increment } from 'firebase/firestore';
+import { collection, getDocs, updateDoc, deleteDoc, doc, getDoc, increment, setDoc } from 'firebase/firestore';
 import { db } from '../../config/firebase';
 import { getDepartmentDisplayName } from '../../utils/departmentHelper';
 import { DEPARTMENT_SHORT_FORMS } from '../../config/constants';
 import Swal from 'sweetalert2';
+import RequestTrendChart from '../../components/Admin/RequestTrendChart';
 
 const AdminDashboard = () => {
     const navigate = useNavigate();
@@ -87,52 +89,44 @@ const AdminDashboard = () => {
         fetchData();
     }, [navigate]);
 
-    // Helper function to sanitize university name for path
+    // Helper function to sanitize for ID
     const sanitizeId = (str) => str.replace(/[^a-zA-Z0-9_-]/g, '_').toLowerCase().slice(0, 64);
 
-    // Fetch all data
+    // Fetch all data with blood group structure
     const fetchData = async () => {
         try {
             setLoading(true);
             console.log('=== ADMIN DASHBOARD: Starting data fetch ===');
-            console.log('New architecture: /donors/{uniName}/{deptShortForm}/{donorId}');
+            console.log('New architecture: /donors/{bloodGroup}/donors/{donorId}');
             console.time('Dashboard Load Time');
             
-            // Fetch donors
+            // Fetch donors organized by blood group
             const donorsRef = collection(db, 'donors');
-            const uniDocs = await getDocs(donorsRef);
-            console.log('📚 Universities found:', uniDocs.docs.length);
+            const bloodGroupDocs = await getDocs(donorsRef);
+            console.log('🩸 Blood groups found:', bloodGroupDocs.docs.length);
             
             const allDonors = [];
-            const universityStats = {};
-            const departmentStats = {};
-            const departmentShortForms = Object.values(DEPARTMENT_SHORT_FORMS);
+            const bloodGroupStats = {};
 
-            // Fetch all departments for all universities in parallel
+            // Fetch all donors for all blood groups in parallel
             const allPromises = [];
-            const uniDocMap = new Map();
 
-            for (const uniDoc of uniDocs.docs) {
-                const uniName = uniDoc.id;
-                uniDocMap.set(uniName, uniDoc);
-                universityStats[uniName] = { total: 0, available: 0 };
+            for (const bgDoc of bloodGroupDocs.docs) {
+                const bloodGroup = bgDoc.id;
+                bloodGroupStats[bloodGroup] = { total: 0, available: 0 };
                 
-                // Create promises for all departments (parallel instead of sequential)
-                for (const deptShortForm of departmentShortForms) {
-                    const promise = getDocs(collection(uniDoc.ref, deptShortForm))
-                        .then(donorDocs => ({
-                            uniName,
-                            deptShortForm,
-                            donorDocs,
-                        }))
-                        .catch(() => ({
-                            uniName,
-                            deptShortForm,
-                            donorDocs: { docs: [] }, // Return empty if collection doesn't exist
-                        }));
-                    
-                    allPromises.push(promise);
-                }
+                // Create promise for donors under this blood group
+                const promise = getDocs(collection(bgDoc.ref, 'donors'))
+                    .then(donorDocs => ({
+                        bloodGroup,
+                        donorDocs,
+                    }))
+                    .catch(() => ({
+                        bloodGroup,
+                        donorDocs: { docs: [] },
+                    }));
+                
+                allPromises.push(promise);
             }
 
             // Wait for all queries to complete in parallel
@@ -140,42 +134,31 @@ const AdminDashboard = () => {
             
             // Process results
             for (const result of results) {
-                const { uniName, deptShortForm, donorDocs } = result;
+                const { bloodGroup, donorDocs } = result;
                 
                 if (donorDocs.docs.length > 0) {
-                    const fullDepartmentName = getDepartmentDisplayName(deptShortForm);
-                    const deptKey = `${uniName}|${fullDepartmentName}`;
-                    
-                    if (!departmentStats[deptKey]) {
-                        departmentStats[deptKey] = { total: 0, available: 0, university: uniName };
-                    }
+                    console.log(`   💉 ${bloodGroup}: ${donorDocs.docs.length} donors`);
 
                     donorDocs.forEach((donorDocData) => {
                         const isAvailable = donorDocData.data().isAvailable === true;
                         const donorData = {
                             id: donorDocData.id,
-                            university: donorDocData.data().university || uniName,
-                            universitySanitized: uniName,
-                            department: fullDepartmentName,
-                            departmentShortForm: deptShortForm,
+                            bloodGroup: bloodGroup,
                             ...donorDocData.data(),
                         };
                         allDonors.push(donorData);
                         
                         // Update stats
-                        universityStats[uniName].total++;
-                        if (isAvailable) universityStats[uniName].available++;
-                        
-                        departmentStats[deptKey].total++;
-                        if (isAvailable) departmentStats[deptKey].available++;
+                        bloodGroupStats[bloodGroup].total++;
+                        if (isAvailable) bloodGroupStats[bloodGroup].available++;
                     });
                 }
             }
 
-            // console.log('\n✅ Total donors fetched:', allDonors.length);
+            console.log('\n✅ Total donors fetched:', allDonors.length);
             console.timeEnd('Dashboard Load Time');
 
-            // Fetch availability requests in parallel with stats
+            // Fetch availability requests and global stats in parallel
             // eslint-disable-next-line
             const [statsData, reqDocs] = await Promise.all([
                 getDoc(doc(db, 'stats', 'global')).catch(() => null),
@@ -192,15 +175,29 @@ const AdminDashboard = () => {
             setDonors(allDonors);
             setRequests(allRequests);
 
-            // Calculate stats
-            const stats = {
-                totalDonors: allDonors.length,
-                availableDonors: allDonors.filter((d) => d.isAvailable === true).length,
-                pendingRequests: allRequests.filter((r) => r.status === 'pending').length,
-                totalUniversities: Object.keys(universityStats).length,
-                universityStats,
-                departmentStats,
-            };
+            // Use stats from collection if available, otherwise calculate
+            let stats = {};
+            if (statsData && statsData.exists()) {
+                const globalStats = statsData.data();
+                console.log('📊 Using stats from collection:', globalStats);
+                stats = {
+                    totalDonors: globalStats.totalDonors || 0,
+                    availableDonors: globalStats.availableDonors || 0,
+                    pendingRequests: allRequests.filter((r) => r.status === 'pending').length,
+                    totalBloodGroups: Object.keys(bloodGroupStats).length,
+                    bloodGroupStats,
+                };
+            } else {
+                // Fallback: calculate stats locally
+                console.log('📊 Stats collection not found, calculating locally');
+                stats = {
+                    totalDonors: allDonors.length,
+                    availableDonors: allDonors.filter((d) => d.isAvailable === true).length,
+                    pendingRequests: allRequests.filter((r) => r.status === 'pending').length,
+                    totalBloodGroups: Object.keys(bloodGroupStats).length,
+                    bloodGroupStats,
+                };
+            }
             
             console.log('📊 Stats calculated:', stats);
             setStats(stats);
@@ -216,6 +213,39 @@ const AdminDashboard = () => {
         } finally {
             setLoading(false);
         }
+    };
+
+    // Generate chart data for request submission trends
+    const getRequestChartData = () => {
+        const last30Days = {};
+        const today = new Date();
+        
+        // Initialize last 30 days
+        for (let i = 29; i >= 0; i--) {
+            const date = new Date(today);
+            date.setDate(date.getDate() - i);
+            const dateStr = date.toISOString().split('T')[0];
+            last30Days[dateStr] = 0;
+        }
+
+        // Count requests by date
+        requests.forEach((request) => {
+            if (request.requestedAt) {
+                const dateStr = new Date(request.requestedAt).toISOString().split('T')[0];
+                if (last30Days.hasOwnProperty(dateStr)) {
+                    last30Days[dateStr]++;
+                }
+            }
+        });
+
+        // Format for chart
+        return {
+            labels: Object.keys(last30Days).map(date => {
+                const d = new Date(date);
+                return `${d.getMonth() + 1}/${d.getDate()}`;
+            }),
+            data: Object.values(last30Days),
+        };
     };
 
     const handleLogout = async () => {
@@ -237,12 +267,12 @@ const AdminDashboard = () => {
 
     const handleSaveEdit = async () => {
         try {
-            const { id, university, universitySanitized, department, departmentShortForm, ...updateData } = editFormData;
+            const { id, bloodGroup, ...updateData } = editFormData;
             const donorRef = doc(
                 db,
                 'donors',
-                universitySanitized || sanitizeId(university),
-                departmentShortForm,
+                bloodGroup,
+                'donors',
                 id
             );
 
@@ -252,38 +282,68 @@ const AdminDashboard = () => {
             const newIsAvailable = updateData.isAvailable;
             const newBloodGroup = updateData.bloodGroup;
 
-            // Prepare stats updates
-            const statsRef = doc(db, 'stats', 'global');
-            const statsUpdates = {};
-
-            // Handle availability change
-            if (oldIsAvailable !== newIsAvailable) {
-                if (newIsAvailable && !oldIsAvailable) {
-                    // Became available
-                    statsUpdates.availableDonors = increment(1);
-                } else if (!newIsAvailable && oldIsAvailable) {
-                    // Became unavailable
-                    statsUpdates.availableDonors = increment(-1);
-                }
-            }
-
-            // Handle blood group change
+            // If blood group changed, we need to move the donor to a new collection
             if (oldBloodGroup !== newBloodGroup) {
-                // Decrement old blood group
-                statsUpdates[`byBloodGroup.${oldBloodGroup}`] = increment(-1);
-                // Increment new blood group
-                statsUpdates[`byBloodGroup.${newBloodGroup}`] = increment(1);
-            }
+                // Create new donor document in new blood group
+                const newBgDocRef = doc(db, 'donors', newBloodGroup);
+                const newBgDocSnap = await getDoc(newBgDocRef);
+                if (!newBgDocSnap.exists()) {
+                    await setDoc(newBgDocRef, { 
+                        bloodGroup: newBloodGroup,
+                        createdAt: new Date().toISOString(),
+                    });
+                }
 
-            // Update donor document
-            await updateDoc(donorRef, {
-                ...updateData,
-                updatedAt: new Date().toISOString(),
-            });
+                const newDonorRef = doc(db, 'donors', newBloodGroup, 'donors', id);
+                await setDoc(newDonorRef, {
+                    ...updateData,
+                    bloodGroup: newBloodGroup,
+                    updatedAt: new Date().toISOString(),
+                });
 
-            // Update stats if there are changes
-            if (Object.keys(statsUpdates).length > 0) {
+                // Delete from old blood group
+                await deleteDoc(donorRef);
+
+                // Update stats
+                const statsRef = doc(db, 'stats', 'global');
+                const statsUpdates = {
+                    [`byBloodGroup.${oldBloodGroup}`]: increment(-1),
+                    [`byBloodGroup.${newBloodGroup}`]: increment(1),
+                };
+
+                if (oldIsAvailable !== newIsAvailable) {
+                    if (newIsAvailable && !oldIsAvailable) {
+                        statsUpdates.availableDonors = increment(1);
+                    } else if (!newIsAvailable && oldIsAvailable) {
+                        statsUpdates.availableDonors = increment(-1);
+                    }
+                }
+
                 await updateDoc(statsRef, statsUpdates);
+            } else {
+                // Same blood group, just update the document
+                const statsRef = doc(db, 'stats', 'global');
+                const statsUpdates = {};
+
+                // Handle availability change
+                if (oldIsAvailable !== newIsAvailable) {
+                    if (newIsAvailable && !oldIsAvailable) {
+                        statsUpdates.availableDonors = increment(1);
+                    } else if (!newIsAvailable && oldIsAvailable) {
+                        statsUpdates.availableDonors = increment(-1);
+                    }
+                }
+
+                // Update donor document
+                await updateDoc(donorRef, {
+                    ...updateData,
+                    updatedAt: new Date().toISOString(),
+                });
+
+                // Update stats if there are changes
+                if (Object.keys(statsUpdates).length > 0) {
+                    await updateDoc(statsRef, statsUpdates);
+                }
             }
 
             setEditDialog(false);
@@ -318,8 +378,8 @@ const AdminDashboard = () => {
                 const donorRef = doc(
                     db,
                     'donors',
-                    donor.universitySanitized || sanitizeId(donor.university),
-                    donor.departmentShortForm,
+                    donor.bloodGroup,
+                    'donors',
                     donor.id
                 );
 
@@ -364,6 +424,54 @@ const AdminDashboard = () => {
 
     const handleApproveRequest = async (request) => {
         try {
+            // Step 1: Find the donor document across all blood groups
+            const BLOOD_GROUPS = ['O+', 'O-', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-'];
+            let donorDocRef = null;
+            let donorExists = false;
+
+            for (const bloodGroup of BLOOD_GROUPS) {
+                try {
+                    const donorRef = doc(db, 'donors', bloodGroup, 'donors', request.donorId);
+                    const donorSnap = await getDoc(donorRef);
+                    if (donorSnap.exists()) {
+                        donorDocRef = donorRef;
+                        donorExists = true;
+                        break;
+                    }
+                } catch (err) {
+                    // Continue searching other blood groups
+                    continue;
+                }
+            }
+
+            // Step 2: Check if donor document exists
+            if (!donorExists) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Donor Not Found',
+                    html: `
+                        <div style="text-align: left;">
+                            <p><strong>Donor ID:</strong> ${request.donorId}</p>
+                            <p><strong>Institution:</strong> ${request.institution}</p>
+                            <p><strong>Department:</strong> ${request.department}</p>
+                            <br/>
+                            <p style="color: #e63946; font-weight: bold;">❌ No matching donor document found in the system.</p>
+                            <p style="font-size: 14px; color: #666;">The donor may have been deleted or the ID may be incorrect.</p>
+                        </div>
+                    `,
+                    confirmButtonText: 'OK',
+                    confirmButtonColor: '#e63946',
+                });
+                return;
+            }
+
+            // Step 3: Update donor's availability status
+            await updateDoc(donorDocRef, {
+                isAvailable: request.availabilityStatus === true,
+                updatedAt: new Date().toISOString(),
+            });
+
+            // Step 4: Mark request as approved
             const requestRef = doc(db, 'availabilityRequests', request.id);
             await updateDoc(requestRef, {
                 status: 'approved',
@@ -372,9 +480,17 @@ const AdminDashboard = () => {
 
             Swal.fire({
                 icon: 'success',
-                title: 'Request Approved',
-                text: 'Availability request has been approved',
-                timer: 1500,
+                title: 'Request Approved ✅',
+                html: `
+                    <div style="text-align: left;">
+                        <p><strong>Donor ID:</strong> ${request.donorId}</p>
+                        <p><strong>New Status:</strong> ${request.availabilityStatus ? '✅ Available' : '❌ Not Available'}</p>
+                        <br/>
+                        <p style="color: #28a745;">Donor record has been updated successfully!</p>
+                    </div>
+                `,
+                confirmButtonColor: '#28a745',
+                timer: 2000,
             });
             fetchData();
         } catch (error) {
@@ -388,17 +504,46 @@ const AdminDashboard = () => {
 
     const handleRejectRequest = async (request) => {
         try {
+            // Step 1: Verify donor exists (optional - for informational purposes)
+            const BLOOD_GROUPS = ['O+', 'O-', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-'];
+            let donorExists = false;
+
+            for (const bloodGroup of BLOOD_GROUPS) {
+                try {
+                    const donorRef = doc(db, 'donors', bloodGroup, 'donors', request.donorId);
+                    const donorSnap = await getDoc(donorRef);
+                    if (donorSnap.exists()) {
+                        donorExists = true;
+                        break;
+                    }
+                } catch (err) {
+                    continue;
+                }
+            }
+
+            // Step 2: Mark request as rejected
             const requestRef = doc(db, 'availabilityRequests', request.id);
             await updateDoc(requestRef, {
                 status: 'rejected',
                 rejectedAt: new Date().toISOString(),
             });
 
+            const statusMessage = donorExists 
+                ? 'Donor record exists and remains unchanged.'
+                : 'Note: No matching donor document found (may have been deleted).';
+
             Swal.fire({
                 icon: 'success',
-                title: 'Request Rejected',
-                text: 'Availability request has been rejected',
-                timer: 1500,
+                title: 'Request Rejected ❌',
+                html: `
+                    <div style="text-align: left;">
+                        <p><strong>Donor ID:</strong> ${request.donorId}</p>
+                        <br/>
+                        <p style="color: #666;">${statusMessage}</p>
+                    </div>
+                `,
+                confirmButtonColor: '#e63946',
+                timer: 2000,
             });
             fetchData();
         } catch (error) {
@@ -689,14 +834,14 @@ const AdminDashboard = () => {
                                             justifyContent: 'center',
                                         }}
                                     >
-                                        <SchoolIcon sx={{ color: '#1976d2' }} />
+                                        <BloodtypeIcon sx={{ color: '#e63946' }} />
                                     </Box>
                                     <Box>
                                         <Typography color="text.secondary" variant="caption">
-                                            Universities
+                                            Blood Groups
                                         </Typography>
                                         <Typography variant="h5" fontWeight={700}>
-                                            {stats.totalUniversities}
+                                            {stats.totalBloodGroups}
                                         </Typography>
                                     </Box>
                                 </Box>
@@ -711,6 +856,7 @@ const AdminDashboard = () => {
                         <Tab label={`Donors (${donors.length})`} />
                         <Tab label={`Breakdown`} />
                         <Tab label={`Availability Requests (${requests.length})`} />
+                        <Tab label="Analytics" />
                     </Tabs>
 
                     {/* Donors Tab */}
@@ -1024,73 +1170,59 @@ const AdminDashboard = () => {
                     {tabValue === 1 && (
                         <Box sx={{ p: 3 }}>
                             <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold', mb: 3 }}>
-                                📊 University-wise Breakdown
+                                🩸 Blood Group Breakdown
                             </Typography>
-                            {Object.entries(stats.universityStats)
-                                .sort(([uniNameA], [uniNameB]) => uniNameA.localeCompare(uniNameB))
-                                .map(([uniName, uniData]) => (
-                                <Accordion key={uniName} sx={{ mb: 2 }}>
-                                    <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, width: '100%' }}>
-                                            <SchoolIcon sx={{ color: '#457b9d' }} />
-                                            <Box sx={{ flex: 1 }}>
-                                                <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>
-                                                    {uniName}
-                                                </Typography>
-                                            </Box>
-                                            <Chip
-                                                label={`${uniData.total} total`}
-                                                size="small"
-                                                sx={{ bgcolor: '#e3f2fd', color: '#1976d2' }}
-                                            />
-                                            <Chip
-                                                label={`${uniData.available} available`}
-                                                size="small"
-                                                sx={{ bgcolor: '#e8f5e9', color: '#28a745' }}
-                                            />
-                                        </Box>
-                                    </AccordionSummary>
-                                    <AccordionDetails>
-                                        <Box>
-                                            <Typography variant="body2" sx={{ mb: 2, fontWeight: 'bold' }}>
-                                                Department Breakdown:
-                                            </Typography>
-                                            <Grid container spacing={2}>
-                                                {Object.entries(stats.departmentStats)
-                                                    .filter(([key]) => key.startsWith(uniName + '|'))
-                                                    .sort(([keyA], [keyB]) => keyA.split('|')[1].localeCompare(keyB.split('|')[1]))
-                                                    .map(([key, deptData]) => {
-                                                        const deptName = key.split('|')[1];
-                                                        return (
-                                                            <Grid item xs={12} sm={6} md={4} key={key}>
-                                                                <Card sx={{ boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
-                                                                    <CardContent sx={{ pb: 2 }}>
-                                                                        <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1 }}>
-                                                                            {deptName}
-                                                                        </Typography>
-                                                                        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                                                                            <Chip
-                                                                                label={`${deptData.total} total`}
-                                                                                size="small"
-                                                                                variant="outlined"
-                                                                            />
-                                                                            <Chip
-                                                                                label={`${deptData.available} available`}
-                                                                                size="small"
-                                                                                color="success"
-                                                                                variant="outlined"
-                                                                            />
-                                                                        </Box>
-                                                                    </CardContent>
-                                                                </Card>
-                                                            </Grid>
-                                                        );
-                                                    })}
-                                            </Grid>
-                                        </Box>
-                                    </AccordionDetails>
-                                </Accordion>
-                            ))}
+                            <Grid container spacing={2}>
+                                {Object.entries(stats.bloodGroupStats || {})
+                                    .sort(([bgA], [bgB]) => bgA.localeCompare(bgB))
+                                    .map(([bloodGroup, bgData]) => (
+                                        <Grid item xs={12} sm={6} md={4} lg={3} key={bloodGroup}>
+                                            <Card sx={{ boxShadow: '0 4px 12px rgba(0,0,0,0.08)', height: '100%' }}>
+                                                <CardContent>
+                                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+                                                        <Box
+                                                            sx={{
+                                                                width: 45,
+                                                                height: 45,
+                                                                borderRadius: '50%',
+                                                                background: '#fee2e2',
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                justifyContent: 'center',
+                                                                fontSize: '1.2rem',
+                                                                fontWeight: 'bold',
+                                                                color: '#e63946',
+                                                            }}
+                                                        >
+                                                            {bloodGroup.charAt(0)}
+                                                        </Box>
+                                                        <Box>
+                                                            <Typography variant="subtitle1" sx={{ fontWeight: 'bold', color: '#e63946' }}>
+                                                                {bloodGroup}
+                                                            </Typography>
+                                                            <Typography variant="caption" color="text.secondary">
+                                                                Blood Type
+                                                            </Typography>
+                                                        </Box>
+                                                    </Box>
+                                                    <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                                                        <Chip
+                                                            label={`${bgData.total} total`}
+                                                            size="small"
+                                                            sx={{ bgcolor: '#e3f2fd', color: '#1976d2' }}
+                                                        />
+                                                        <Chip
+                                                            label={`${bgData.available} available`}
+                                                            size="small"
+                                                            color="success"
+                                                            variant="outlined"
+                                                        />
+                                                    </Box>
+                                                </CardContent>
+                                            </Card>
+                                        </Grid>
+                                    ))}
+                            </Grid>
                         </Box>
                     )}
 
@@ -1170,6 +1302,165 @@ const AdminDashboard = () => {
                                     </TableBody>
                                 </Table>
                             </TableContainer>
+                        </Box>
+                    )}
+
+                    {/* Analytics Tab */}
+                    {tabValue === 3 && (
+                        <Box sx={{ p: 3 }}>
+                            <Grid container spacing={3}>
+                                {/* Request Trend Chart */}
+                                <Grid item xs={12}>
+                                    <RequestTrendChart 
+                                        labels={getRequestChartData().labels}
+                                        data={getRequestChartData().data}
+                                    />
+                                </Grid>
+
+                                {/* Blood Group Distribution */}
+                                <Grid item xs={12} md={6}>
+                                    <Paper sx={{ p: 3, boxShadow: '0 4px 20px rgba(0,0,0,0.06)', borderRadius: 2 }}>
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
+                                            <Box
+                                                sx={{
+                                                    width: 40,
+                                                    height: 40,
+                                                    borderRadius: '50%',
+                                                    background: 'linear-gradient(135deg, #e63946 0%, #a4161a 100%)',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    color: 'white',
+                                                    fontSize: '1.2rem',
+                                                }}
+                                            >
+                                                🩸
+                                            </Box>
+                                            <Typography variant="h6" fontWeight={700} color="#1d3557">
+                                                Blood Group Distribution
+                                            </Typography>
+                                        </Box>
+                                        
+                                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                                            {Object.entries(stats.bloodGroupStats || {})
+                                                .sort((a, b) => b[1].total - a[1].total)
+                                                .map(([bg, bgStats]) => (
+                                                    <Box key={bg}>
+                                                        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+                                                            <Typography variant="body2" fontWeight={600}>{bg}</Typography>
+                                                            <Typography variant="body2" color="text.secondary">
+                                                                {bgStats.total} donor{bgStats.total !== 1 ? 's' : ''} ({bgStats.available} available)
+                                                            </Typography>
+                                                        </Box>
+                                                        <Box
+                                                            sx={{
+                                                                width: '100%',
+                                                                height: 8,
+                                                                bgcolor: '#e0e0e0',
+                                                                borderRadius: 1,
+                                                                overflow: 'hidden',
+                                                            }}
+                                                        >
+                                                            <Box
+                                                                sx={{
+                                                                    height: '100%',
+                                                                    width: `${stats.totalDonors > 0 ? (bgStats.total / stats.totalDonors) * 100 : 0}%`,
+                                                                    background: 'linear-gradient(90deg, #457b9d 0%, #2a6a7a 100%)',
+                                                                    transition: 'width 0.3s ease',
+                                                                }}
+                                                            />
+                                                        </Box>
+                                                    </Box>
+                                                ))}
+                                        </Box>
+                                    </Paper>
+                                </Grid>
+
+                                {/* Request Status Summary */}
+                                <Grid item xs={12} md={6}>
+                                    <Paper sx={{ p: 3, boxShadow: '0 4px 20px rgba(0,0,0,0.06)', borderRadius: 2 }}>
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
+                                            <Box
+                                                sx={{
+                                                    width: 40,
+                                                    height: 40,
+                                                    borderRadius: '50%',
+                                                    background: 'linear-gradient(135deg, #f77f00 0%, #d62828 100%)',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    color: 'white',
+                                                    fontSize: '1.2rem',
+                                                }}
+                                            >
+                                                📋
+                                            </Box>
+                                            <Typography variant="h6" fontWeight={700} color="#1d3557">
+                                                Request Status Summary
+                                            </Typography>
+                                        </Box>
+
+                                        <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
+                                            <Box
+                                                sx={{
+                                                    p: 2,
+                                                    bgcolor: '#fff3e0',
+                                                    borderRadius: 1,
+                                                    textAlign: 'center',
+                                                    borderLeft: '4px solid #f57c00',
+                                                }}
+                                            >
+                                                <Typography variant="h5" fontWeight={700} color="#f57c00">
+                                                    {requests.filter(r => r.status === 'pending').length}
+                                                </Typography>
+                                                <Typography variant="caption" color="text.secondary">Pending</Typography>
+                                            </Box>
+                                            <Box
+                                                sx={{
+                                                    p: 2,
+                                                    bgcolor: '#e8f5e9',
+                                                    borderRadius: 1,
+                                                    textAlign: 'center',
+                                                    borderLeft: '4px solid #4caf50',
+                                                }}
+                                            >
+                                                <Typography variant="h5" fontWeight={700} color="#4caf50">
+                                                    {requests.filter(r => r.status === 'approved').length}
+                                                </Typography>
+                                                <Typography variant="caption" color="text.secondary">Approved</Typography>
+                                            </Box>
+                                            <Box
+                                                sx={{
+                                                    p: 2,
+                                                    bgcolor: '#ffebee',
+                                                    borderRadius: 1,
+                                                    textAlign: 'center',
+                                                    borderLeft: '4px solid #f44336',
+                                                }}
+                                            >
+                                                <Typography variant="h5" fontWeight={700} color="#f44336">
+                                                    {requests.filter(r => r.status === 'rejected').length}
+                                                </Typography>
+                                                <Typography variant="caption" color="text.secondary">Rejected</Typography>
+                                            </Box>
+                                            <Box
+                                                sx={{
+                                                    p: 2,
+                                                    bgcolor: '#e3f2fd',
+                                                    borderRadius: 1,
+                                                    textAlign: 'center',
+                                                    borderLeft: '4px solid #2196f3',
+                                                }}
+                                            >
+                                                <Typography variant="h5" fontWeight={700} color="#2196f3">
+                                                    {requests.length}
+                                                </Typography>
+                                                <Typography variant="caption" color="text.secondary">Total</Typography>
+                                            </Box>
+                                        </Box>
+                                    </Paper>
+                                </Grid>
+                            </Grid>
                         </Box>
                     )}
                 </Paper>

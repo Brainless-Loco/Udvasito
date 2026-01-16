@@ -82,53 +82,42 @@ export const FirebaseProvider = ({ children }) => {
     }
   };
 
-  // Fetch all donors from new structure: /donors/{uniName}/{deptShortForm}/{donorId}
+  // Fetch all donors from blood group structure: /donors/{bloodGroup}/donors/{donorId}
   const fetchDonors = async () => {
     try {
       setLoading(true);
-      // console.log('=== FETCHING DONORS FROM NEW STRUCTURE ===');
-      // console.log('Structure: /donors/{uniName}/{deptShortForm}/{donorId}');
+      console.log('=== FETCHING DONORS FROM BLOOD GROUP STRUCTURE ===');
+      console.log('Structure: /donors/{bloodGroup}/donors/{donorId}');
       
       const donorsRef = collection(db, 'donors');
-      const uniDocs = await getDocs(donorsRef);
+      const bloodGroupDocs = await getDocs(donorsRef);
       const donorsList = [];
 
-      // console.log('📚 Universities found:', uniDocs.docs.length);
+      console.log('🩸 Blood groups found:', bloodGroupDocs.docs.length);
 
-      for (const uniDoc of uniDocs.docs) {
-        const uniName = uniDoc.id;
-        // console.log(`\n📍 Processing university: ${uniName}`);
+      for (const bloodGroupDoc of bloodGroupDocs.docs) {
+        const bloodGroup = bloodGroupDoc.id;
+        console.log(`\n📍 Processing blood group: ${bloodGroup}`);
         
-        // Get all department collections under this university
-        // Department collections are stored directly under the university document
-        const departmentShortForms = Object.values(DEPARTMENT_SHORT_FORMS);
+        try {
+          // Get all donors under this blood group
+          const donorsSubCollection = collection(bloodGroupDoc.ref, 'donors');
+          const donorDocs = await getDocs(donorsSubCollection);
+          
+          if (donorDocs.docs.length > 0) {
+            console.log(`   💉 ${bloodGroup}: ${donorDocs.docs.length} donors`);
 
-        // console.log(`   Checking ${departmentShortForms.length} possible departments...`);
-
-        for (const deptShortForm of departmentShortForms) {
-          try {
-            const deptRef = collection(uniDoc.ref, deptShortForm);
-            const donorDocs = await getDocs(deptRef);
-            
-            if (donorDocs.docs.length > 0) {
-              const fullDepartmentName = getDepartmentDisplayName(deptShortForm);
-              // console.log(`   📂 ${deptShortForm} (${fullDepartmentName}): ${donorDocs.docs.length} donors`);
-
-              donorDocs.forEach((donorDoc) => {
-                const donorData = {
-                  id: donorDoc.id,
-                  university: uniName,
-                  department: fullDepartmentName,
-                  departmentShortForm: deptShortForm,
-                  ...donorDoc.data(),
-                };
-                donorsList.push(donorData);
-              });
-            }
-          } catch (err) {
-            // Department collection might not exist, skip
-            // console.log(`   ⏭️  Department ${deptShortForm} not found`);
+            donorDocs.forEach((donorDoc) => {
+              const donorData = {
+                id: donorDoc.id,
+                bloodGroup: bloodGroup,
+                ...donorDoc.data(),
+              };
+              donorsList.push(donorData);
+            });
           }
+        } catch (err) {
+          console.log(`   ⏭️  No donors found under ${bloodGroup}`);
         }
       }
 
@@ -148,67 +137,57 @@ export const FirebaseProvider = ({ children }) => {
 
   
 
-  // Add a new donor with new structure: /donors/{uniName}/{deptShortForm}/{donorId}
+  // Add a new donor with blood group structure: /donors/{bloodGroup}/donors/{donorId}
   const addDonor = async (donorData) => {
     try {
-      const university = donorData.institution === 'Other' ? donorData.otherInstitution : donorData.institution;
-      const department = donorData.department === 'Other' ? donorData.otherDepartment : donorData.department;
-
-      // Use university name directly as document ID (sanitized)
-      const sanitizeId = (str) => str.replace(/[^a-zA-Z0-9_-]/g, '_').toLowerCase().slice(0, 64);
-      const uniName = sanitizeId(university);
+      const bloodGroup = donorData.bloodGroup || 'O+';
       
-      // Use short form for department
-      const deptShortForm = getDepartmentShortForm(department);
-
-      // Generate donor ID (using student ID or timestamp)
-      let donorId = donorData.studentId ? sanitizeId(donorData.studentId) : `donor_${Date.now()}`;
+      // Sanitize function for IDs
+      const sanitizeId = (str) => str.replace(/[^a-zA-Z0-9_-]/g, '_').toLowerCase().slice(0, 64);
+      
+      // Generate unique donor ID (using email as primary key since it's unique)
+      let donorId = donorData.email ? sanitizeId(donorData.email) : `donor_${Date.now()}`;
       let finalDonorId = donorId;
 
-      // Check for duplicate IDs in this department
-      const deptRef = collection(db, 'donors', uniName, deptShortForm);
-      const snapshot = await getDocs(deptRef);
+      // Check for duplicate IDs in this blood group
+      const donorSubCollectionRef = collection(db, 'donors', bloodGroup, 'donors');
+      const snapshot = await getDocs(donorSubCollectionRef);
       const existingIds = snapshot.docs.map(d => d.id);
 
-      // If ID exists, append suffix
+      // If ID exists, append suffix with timestamp
       if (existingIds.includes(donorId)) {
-        let counter = 2;
-        while (existingIds.includes(`${donorId}-${counter}`)) {
-          counter++;
-        }
-        finalDonorId = `${donorId}-${counter}`;
+        finalDonorId = `${donorId}_${Date.now()}`;
       }
 
       const timestampData = {
         ...donorData,
-        university,
-        department, // Store full department name
+        bloodGroup: bloodGroup,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
 
-      // Create university document if doesn't exist
-      const uniDocRef = doc(db, 'donors', uniName);
-      const uniDocSnap = await getDoc(uniDocRef);
-      if (!uniDocSnap.exists()) {
-        console.log(`Creating university document: ${uniName}`);
-        await setDoc(uniDocRef, { 
-          name: university,
+      // Create blood group document if doesn't exist
+      const bgDocRef = doc(db, 'donors', bloodGroup);
+      const bgDocSnap = await getDoc(bgDocRef);
+      if (!bgDocSnap.exists()) {
+        console.log(`Creating blood group document: ${bloodGroup}`);
+        await setDoc(bgDocRef, { 
+          bloodGroup: bloodGroup,
           createdAt: new Date().toISOString(),
         });
       }
 
-      // Set the donor document at: /donors/{uniName}/{deptShortForm}/{donorId}
-      const donorDocRef = doc(db, 'donors', uniName, deptShortForm, finalDonorId);
+      // Set the donor document at: /donors/{bloodGroup}/donors/{donorId}
+      const donorDocRef = doc(db, 'donors', bloodGroup, 'donors', finalDonorId);
       await setDoc(donorDocRef, timestampData);
 
       console.log('✅ Donor added successfully:', {
-        path: `donors/${uniName}/${deptShortForm}/${finalDonorId}`,
-        fullDepartmentName: department,
+        path: `donors/${bloodGroup}/donors/${finalDonorId}`,
+        bloodGroup: bloodGroup,
+        email: donorData.email,
       });
 
       // Update stats
-      const bloodGroup = donorData.bloodGroup || 'O+';
       const isAvailable = donorData.isAvailable === 'yes' || donorData.isAvailable === true;
       
       const statsUpdateData = {
@@ -258,28 +237,31 @@ export const FirebaseProvider = ({ children }) => {
     }
   };
 
-  // Search donors with filters
+  // Search donors with filters - optimized for blood group structure
   const searchDonors = (filters, limit = true) => {
     let filtered = [...donors];
 
+    // Filter by blood group (primary filter for optimization)
     if (filters.bloodGroup) {
       filtered = filtered.filter((d) => d.bloodGroup === filters.bloodGroup);
     }
+
+    // Filter by department
     if (filters.department) {
       const deptLower = filters.department.toLowerCase();
       filtered = filtered.filter((d) => {
         const dept = d.department?.toLowerCase() || '';
-        // Check if department includes, starts with, or ends with the search term
         return dept.includes(deptLower) || 
                deptLower.split(' ').some(word => dept.includes(word));
       });
     }
+
+    // Filter by address
     if (filters.address) {
       const addressLower = filters.address.toLowerCase();
       filtered = filtered.filter((d) => {
         const current = d.currentAddress?.toLowerCase() || '';
         const permanent = d.permanentAddress?.toLowerCase() || '';
-        // Check prefix, suffix, contains, and word matching
         const matchesAddress = (addr) => {
           if (!addr) return false;
           return addr.includes(addressLower) || 
@@ -291,13 +273,19 @@ export const FirebaseProvider = ({ children }) => {
         return matchesAddress(current) || matchesAddress(permanent);
       });
     }
+
+    // Filter by gender
     if (filters.gender) {
       filtered = filtered.filter((d) => d.gender === filters.gender);
     }
+
+    // Filter by availability
     if (filters.isAvailable !== undefined && filters.isAvailable !== '') {
       const available = filters.isAvailable === 'true' || filters.isAvailable === true;
       filtered = filtered.filter((d) => d.isAvailable === available);
     }
+
+    // Filter by donation history
     if (filters.hasDonatedBefore !== undefined && filters.hasDonatedBefore !== '') {
       const donated = filters.hasDonatedBefore === 'true' || filters.hasDonatedBefore === true;
       filtered = filtered.filter((d) => d.hasDonatedBefore === donated);
@@ -320,7 +308,6 @@ export const FirebaseProvider = ({ children }) => {
         limitedByBloodGroup[bloodGroup] = 0;
       }
 
-      // Only add donor if we haven't reached the limit for their blood group
       if (limitedByBloodGroup[bloodGroup] < MAX_PER_BLOOD_GROUP) {
         result.push(donor);
         limitedByBloodGroup[bloodGroup]++;

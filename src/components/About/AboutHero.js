@@ -17,22 +17,22 @@ const HeroSection = ({ stats }) => {
     const heroStats = [
         {
             icon: <PeopleIcon />,
-            value: stats?.totalDonors || '500+',
+            value: stats?.totalDonors || '50+',
             label: t.about.registeredDonors || 'Registered Donors',
         },
         {
             icon: <HeartIcon />,
-            value: stats?.livesSaved || '1000+',
+            value: stats?.livesSaved || '0+',
             label: t.about.livesSaved || 'Lives Saved',
         },
         {
             icon: <VolunteerIcon />,
-            value: stats?.volunteers || '50+',
+            value: stats?.volunteers || '5',
             label: t.about.volunteers || 'Volunteers',
         },
         {
             icon: <HospitalIcon />,
-            value: stats?.partneredHospitals || '10+',
+            value: stats?.partneredHospitals || '1',
             label: t.about.partneredHospitals || 'Partnered Hospitals',
         },
     ];

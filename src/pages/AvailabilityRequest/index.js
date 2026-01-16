@@ -22,6 +22,8 @@ import Swal from 'sweetalert2';
 import {  useFirebase } from '../../context';
 import { INSTITUTIONS, DEPARTMENTS_CU } from '../../config/constants';
 import { SectionHeader } from '../../components';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '../../config/firebase';
 
 const AvailabilityRequest = () => {
     // const { t } = useLanguage();
@@ -94,10 +96,60 @@ const AvailabilityRequest = () => {
         setLoading(true);
 
         try {
+            // Step 1: Check if donor exists in the system
+            const BLOOD_GROUPS = ['O+', 'O-', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-'];
+            let donorExists = false;
+            let foundBloodGroup = null;
+
+            for (const bloodGroup of BLOOD_GROUPS) {
+                try {
+                    const donorRef = doc(db, 'donors', bloodGroup, 'donors', formData.donorId);
+                    const donorSnap = await getDoc(donorRef);
+                    if (donorSnap.exists()) {
+                        donorExists = true;
+                        foundBloodGroup = bloodGroup;
+                        break;
+                    }
+                } catch (err) {
+                    continue;
+                }
+            }
+
+            // Step 2: Show error if donor not found
+            if (!donorExists) {
+                Swal.fire({
+                    icon: 'error',
+                    title: '❌ Donor Not Found',
+                    html: `
+                        <div style="text-align: left;">
+                            <p><strong>Donor ID:</strong> ${formData.donorId}</p>
+                            <p><strong>Institution:</strong> ${formData.institution}</p>
+                            <p><strong>Department:</strong> ${formData.department}</p>
+                            <br/>
+                            <p style="color: #e63946; font-weight: bold;">We couldn't find a donor record matching this information.</p>
+                            <p style="font-size: 14px; color: #666; margin-top: 10px;">
+                                Please verify:
+                                <ul style="margin-top: 8px; padding-left: 20px;">
+                                    <li>Your Donor ID is correct</li>
+                                    <li>You are registered in the system</li>
+                                    <li>Your institution and department are correct</li>
+                                </ul>
+                            </p>
+                        </div>
+                    `,
+                    confirmButtonText: 'OK, I\'ll Check',
+                    confirmButtonColor: '#e63946',
+                });
+                setLoading(false);
+                return;
+            }
+
+            // Step 3: Submit the request if donor exists
             const result = await addAvailabilityRequest({
                 institution: formData.institution,
                 department: formData.department,
                 donorId: formData.donorId,
+                bloodGroup: foundBloodGroup, // Store blood group for reference
                 availabilityStatus: formData.availabilityStatus === 'available',
                 requestedAt: new Date().toISOString(),
                 status: 'pending',
@@ -121,9 +173,9 @@ const AvailabilityRequest = () => {
                                 Your availability status change request has been submitted successfully!
                             </p>
                             <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; text-align: left; margin-top: 15px;">
+                                <p style="margin: 8px 0;"><strong>Donor ID:</strong> ${formData.donorId}</p>
                                 <p style="margin: 8px 0;"><strong>Institution:</strong> ${formData.institution}</p>
                                 <p style="margin: 8px 0;"><strong>Department:</strong> ${formData.department}</p>
-                                <p style="margin: 8px 0;"><strong>Donor ID:</strong> ${formData.donorId}</p>
                                 <p style="margin: 8px 0;"><strong>New Status:</strong> ${formData.availabilityStatus === 'available' ? '✅ Available' : '❌ Not Available'}</p>
                             </div>
                             <p style="font-size: 14px; color: #666; margin-top: 15px;">
