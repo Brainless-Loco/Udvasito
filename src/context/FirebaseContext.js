@@ -45,12 +45,12 @@ export const FirebaseProvider = ({ children }) => {
   // Fetch stats from /stats/global document
   const fetchStats = async () => {
     try {
-      console.log('📊 Fetching stats from /stats/global...');
+      // console.log('📊 Fetching stats from /stats/global...');
       const statsSnap = await getDoc(statsRef);
       
       if (statsSnap.exists()) {
         const globalStats = statsSnap.data();
-        console.log('✅ Stats fetched:', globalStats);
+        // console.log('✅ Stats fetched:', globalStats);
         setStats({
           total: globalStats.totalDonors || 0,
           available: globalStats.availableDonors || 0,
@@ -60,7 +60,7 @@ export const FirebaseProvider = ({ children }) => {
         return globalStats;
       } else {
         // Initialize stats if doesn't exist
-        console.log('⚠️ Stats document not found, initializing...');
+        // console.log('⚠️ Stats document not found, initializing...');
         const initialStats = {
           totalDonors: 0,
           availableDonors: 0,
@@ -87,18 +87,18 @@ export const FirebaseProvider = ({ children }) => {
   const fetchDonors = async () => {
     try {
       setLoading(true);
-      console.log('=== FETCHING DONORS FROM BLOOD GROUP STRUCTURE ===');
-      console.log('Structure: /donors/{bloodGroup}/donors/{donorId}');
+      // console.log('=== FETCHING DONORS FROM BLOOD GROUP STRUCTURE ===');
+      // console.log('Structure: /donors/{bloodGroup}/donors/{donorId}');
       
       const donorsRef = collection(db, 'donors');
       const bloodGroupDocs = await getDocs(donorsRef);
       const donorsList = [];
 
-      console.log('🩸 Blood groups found:', bloodGroupDocs.docs.length);
+      // console.log('🩸 Blood groups found:', bloodGroupDocs.docs.length);
 
       for (const bloodGroupDoc of bloodGroupDocs.docs) {
         const bloodGroup = bloodGroupDoc.id;
-        console.log(`\n📍 Processing blood group: ${bloodGroup}`);
+        // console.log(`\n📍 Processing blood group: ${bloodGroup}`);
         
         try {
           // Get all donors under this blood group
@@ -106,7 +106,7 @@ export const FirebaseProvider = ({ children }) => {
           const donorDocs = await getDocs(donorsSubCollection);
           
           if (donorDocs.docs.length > 0) {
-            console.log(`   💉 ${bloodGroup}: ${donorDocs.docs.length} donors`);
+            // console.log(`   💉 ${bloodGroup}: ${donorDocs.docs.length} donors`);
 
             donorDocs.forEach((donorDoc) => {
               const donorData = {
@@ -118,11 +118,11 @@ export const FirebaseProvider = ({ children }) => {
             });
           }
         } catch (err) {
-          console.log(`   ⏭️  No donors found under ${bloodGroup}`);
+          // console.log(`   ⏭️  No donors found under ${bloodGroup}`);
         }
       }
 
-      console.log(`\n✅ Total donors fetched: ${donorsList.length}`);
+      // console.log(`\n✅ Total donors fetched: ${donorsList.length}`);
       setDonors(donorsList);
       
       // Fetch stats separately
@@ -182,11 +182,11 @@ export const FirebaseProvider = ({ children }) => {
       const donorDocRef = doc(db, 'donors', bloodGroup, 'donors', finalDonorId);
       await setDoc(donorDocRef, timestampData);
 
-      console.log('✅ Donor added successfully:', {
-        path: `donors/${bloodGroup}/donors/${finalDonorId}`,
-        bloodGroup: bloodGroup,
-        email: donorData.email,
-      });
+      // console.log('✅ Donor added successfully:', {
+      //   path: `donors/${bloodGroup}/donors/${finalDonorId}`,
+      //   bloodGroup: bloodGroup,
+      //   email: donorData.email,
+      // });
 
       // Update stats
       const isAvailable = donorData.isAvailable === 'yes' || donorData.isAvailable === true;

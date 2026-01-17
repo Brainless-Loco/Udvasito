@@ -18,6 +18,7 @@ import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import TableSortLabel from '@mui/material/TableSortLabel';
+import TablePagination from '@mui/material/TablePagination';
 import TextField from '@mui/material/TextField';
 import Dialog from '@mui/material/Dialog';
 import DialogTitle from '@mui/material/DialogTitle';
@@ -70,6 +71,10 @@ const AdminDashboard = () => {
         universityStats: {},
         departmentStats: {},
     });
+    const [page, setPage] = useState(0);
+    const [rowsPerPage, setRowsPerPage] = useState(10);
+    const [requestPage, setRequestPage] = useState(0);
+    const [requestRowsPerPage, setRequestRowsPerPage] = useState(10);
 
     // Check authentication on mount
     useEffect(() => {
@@ -110,14 +115,14 @@ const AdminDashboard = () => {
     const fetchData = async () => {
         try {
             setLoading(true);
-            console.log('=== ADMIN DASHBOARD: Starting data fetch ===');
-            console.log('New architecture: /donors/{bloodGroup}/donors/{donorId}');
-            console.time('Dashboard Load Time');
+            // console.log('=== ADMIN DASHBOARD: Starting data fetch ===');
+            // console.log('New architecture: /donors/{bloodGroup}/donors/{donorId}');
+            // console.time('Dashboard Load Time');
             
             // Fetch donors organized by blood group
             const donorsRef = collection(db, 'donors');
             const bloodGroupDocs = await getDocs(donorsRef);
-            console.log('🩸 Blood groups found:', bloodGroupDocs.docs.length);
+            // console.log('🩸 Blood groups found:', bloodGroupDocs.docs.length);
             
             const allDonors = [];
             const bloodGroupStats = {};
@@ -151,7 +156,7 @@ const AdminDashboard = () => {
                 const { bloodGroup, donorDocs } = result;
                 
                 if (donorDocs.docs.length > 0) {
-                    console.log(`   💉 ${bloodGroup}: ${donorDocs.docs.length} donors`);
+                    // console.log(`   💉 ${bloodGroup}: ${donorDocs.docs.length} donors`);
 
                     donorDocs.forEach((donorDocData) => {
                         const isAvailable = donorDocData.data().isAvailable === true;
@@ -169,8 +174,8 @@ const AdminDashboard = () => {
                 }
             }
 
-            console.log('\n✅ Total donors fetched:', allDonors.length);
-            console.timeEnd('Dashboard Load Time');
+            // console.log('\n✅ Total donors fetched:', allDonors.length);
+            // console.timeEnd('Dashboard Load Time');
 
             // Fetch availability requests and global stats in parallel
             // eslint-disable-next-line
@@ -179,7 +184,7 @@ const AdminDashboard = () => {
                 getDocs(collection(db, 'availabilityRequests')),
             ]);
             
-            console.log('📋 Availability requests found:', reqDocs.docs.length);
+            // console.log('📋 Availability requests found:', reqDocs.docs.length);
             
             const allRequests = reqDocs.docs.map((doc) => ({
                 id: doc.id,
@@ -193,7 +198,7 @@ const AdminDashboard = () => {
             let stats = {};
             if (statsData && statsData.exists()) {
                 const globalStats = statsData.data();
-                console.log('📊 Using stats from collection:', globalStats);
+                // console.log('📊 Using stats from collection:', globalStats);
                 stats = {
                     totalDonors: globalStats.totalDonors || 0,
                     availableDonors: globalStats.availableDonors || 0,
@@ -203,7 +208,7 @@ const AdminDashboard = () => {
                 };
             } else {
                 // Fallback: calculate stats locally
-                console.log('📊 Stats collection not found, calculating locally');
+                // console.log('📊 Stats collection not found, calculating locally');
                 stats = {
                     totalDonors: allDonors.length,
                     availableDonors: allDonors.filter((d) => d.isAvailable === true).length,
@@ -213,9 +218,9 @@ const AdminDashboard = () => {
                 };
             }
             
-            console.log('📊 Stats calculated:', stats);
+            // console.log('📊 Stats calculated:', stats);
             setStats(stats);
-            console.log('=== ADMIN DASHBOARD: Data fetch complete ===');
+            // console.log('=== ADMIN DASHBOARD: Data fetch complete ===');
         } catch (error) {
             console.error('=== ERROR fetching data ===', error);
             console.error('Error details:', error.message, error.code);
@@ -286,20 +291,34 @@ const AdminDashboard = () => {
 
     const handleSaveEdit = async () => {
         try {
-            const { id, bloodGroup, ...updateData } = editFormData;
+            const { id, bloodGroup: editBloodGroup, ...updateData } = editFormData;
+            
+            // Validate required fields
+            if (!id || !editBloodGroup) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Invalid donor data. Missing ID or blood group.',
+                });
+                return;
+            }
+
+            // Use selectedDonor's blood group as the current location, fall back to editBloodGroup
+            const currentBloodGroup = selectedDonor?.bloodGroup || editBloodGroup;
+            
             const donorRef = doc(
                 db,
                 'donors',
-                bloodGroup,
+                currentBloodGroup,
                 'donors',
                 id
             );
 
             // Check if availability or blood group changed
-            const oldIsAvailable = selectedDonor.isAvailable;
-            const oldBloodGroup = selectedDonor.bloodGroup;
+            const oldIsAvailable = selectedDonor?.isAvailable;
+            const oldBloodGroup = selectedDonor?.bloodGroup;
             const newIsAvailable = updateData.isAvailable;
-            const newBloodGroup = updateData.bloodGroup;
+            const newBloodGroup = editBloodGroup;
 
             // If blood group changed, we need to move the donor to a new collection
             if (oldBloodGroup !== newBloodGroup) {
@@ -353,9 +372,10 @@ const AdminDashboard = () => {
                     }
                 }
 
-                // Update donor document
+                // Update donor document with blood group
                 await updateDoc(donorRef, {
                     ...updateData,
+                    bloodGroup: newBloodGroup,
                     updatedAt: new Date().toISOString(),
                 });
 
@@ -591,7 +611,7 @@ const AdminDashboard = () => {
                 return false;
             }
             // Filter by university
-            if (filters.university && donor.university !== filters.university) {
+            if (filters.institution && donor.institution !== filters.institution) {
                 return false;
             }
             // Filter by department
@@ -649,6 +669,13 @@ const AdminDashboard = () => {
             isAvailable: '',
             hasDonatedBefore: '',
         });
+        setPage(0);
+    };
+
+    // Helper function to update filters and reset pagination
+    const updateFilterWithPageReset = (filterUpdate) => {
+        setFilters(filterUpdate);
+        setPage(0);
     };
 
     // CSV export function
@@ -870,8 +897,50 @@ const AdminDashboard = () => {
                 </Grid>
 
                 {/* Tabs */}
-                <Paper sx={{ boxShadow: '0 4px 20px rgba(0,0,0,0.06)' }}>
-                    <Tabs value={tabValue} onChange={(e, val) => setTabValue(val)}>
+                <Paper sx={{ boxShadow: '0 4px 20px rgba(0,0,0,0.06)', overflow: 'auto' }}>
+                    <Tabs 
+                        value={tabValue} 
+                        onChange={(e, val) => setTabValue(val)}
+                        variant="scrollable"
+                        scrollButtons="always"
+                        allowScrollButtonsMobile
+                        sx={{
+                            '& .MuiTabs-scrollButtons': {
+                                width: '48px',
+                                minWidth: '48px',
+                                flexShrink: 0,
+                                color: '#1d3557',
+                                padding: '0 8px',
+                                '&.Mui-disabled': {
+                                    opacity: 0.3,
+                                },
+                                '& .MuiIconButton-root': {
+                                    padding: '8px',
+                                    minWidth: '40px',
+                                    width: '40px',
+                                    height: '40px',
+                                },
+                            },
+                            '& .MuiTabs-scroller': {
+                                overflowX: 'auto',
+                                overflowY: 'hidden',
+                                scrollBehavior: 'smooth',
+                                '&::-webkit-scrollbar': {
+                                    height: '4px',
+                                },
+                                '&::-webkit-scrollbar-track': {
+                                    bgcolor: '#f5f5f5',
+                                },
+                                '&::-webkit-scrollbar-thumb': {
+                                    bgcolor: '#bdbdbd',
+                                    borderRadius: '2px',
+                                    '&:hover': {
+                                        bgcolor: '#9e9e9e',
+                                    },
+                                },
+                            },
+                        }}
+                    >
                         <Tab label={`Donors (${donors.length})`} />
                         <Tab label={`Breakdown`} />
                         <Tab label={`Availability Requests (${requests.length})`} />
@@ -893,7 +962,7 @@ const AdminDashboard = () => {
                                             size="small"
                                             label="Search Name"
                                             value={filters.searchName}
-                                            onChange={(e) => setFilters({ ...filters, searchName: e.target.value })}
+                                            onChange={(e) => updateFilterWithPageReset({ ...filters, searchName: e.target.value })}
                                             placeholder="Donor name..."
                                             InputLabelProps={{ shrink: true }}
                                         />
@@ -903,15 +972,15 @@ const AdminDashboard = () => {
                                             fullWidth
                                             size="small"
                                             select
-                                            label="University"
-                                            value={filters.university}
-                                            onChange={(e) => setFilters({ ...filters, university: e.target.value })}
+                                            label="Institution"
+                                            value={filters.institution}
+                                            onChange={(e) => updateFilterWithPageReset({ ...filters, institution: e.target.value })}
                                             InputLabelProps={{ shrink: true }}
                                             SelectProps={{ native: true }}
                                         >
-                                            <option value="">All Universities</option>
-                                            {[...new Set(donors.map(d => d.university))].sort().map(uni => (
-                                                <option key={uni} value={uni}>{uni}</option>
+                                            <option value="">All Institutions</option>
+                                            {[...new Set(donors.map(d => d.institution))].sort().map((inst, index) => (
+                                                <option key={inst+index} value={inst}>{inst}</option>
                                             ))}
                                         </TextField>
                                     </Grid>
@@ -922,13 +991,13 @@ const AdminDashboard = () => {
                                             select
                                             label="Department"
                                             value={filters.department}
-                                            onChange={(e) => setFilters({ ...filters, department: e.target.value })}
+                                            onChange={(e) => updateFilterWithPageReset({ ...filters, department: e.target.value })}
                                             InputLabelProps={{ shrink: true }}
                                             SelectProps={{ native: true }}
                                         >
                                             <option value="">All Departments</option>
-                                            {[...new Set(donors.filter(d => !filters.university || d.university === filters.university).map(d => d.department))].sort().map(dept => (
-                                                <option key={dept} value={dept}>{dept}</option>
+                                            {[...new Set(donors.filter(d => !filters.institution || d.institution === filters.institution).map(d => d.department))].sort().map((dept, index) => (
+                                                <option key={dept+index} value={dept}>{dept}</option>
                                             ))}
                                         </TextField>
                                     </Grid>
@@ -939,7 +1008,7 @@ const AdminDashboard = () => {
                                             select
                                             label="Blood Group"
                                             value={filters.bloodGroup}
-                                            onChange={(e) => setFilters({ ...filters, bloodGroup: e.target.value })}
+                                            onChange={(e) => updateFilterWithPageReset({ ...filters, bloodGroup: e.target.value })}
                                             InputLabelProps={{ shrink: true }}
                                             SelectProps={{ native: true }}
                                         >
@@ -961,7 +1030,7 @@ const AdminDashboard = () => {
                                             select
                                             label="Gender"
                                             value={filters.gender}
-                                            onChange={(e) => setFilters({ ...filters, gender: e.target.value })}
+                                            onChange={(e) => updateFilterWithPageReset({ ...filters, gender: e.target.value })}
                                             InputLabelProps={{ shrink: true }}
                                             SelectProps={{ native: true }}
                                         >
@@ -978,7 +1047,7 @@ const AdminDashboard = () => {
                                             select
                                             label="Available"
                                             value={filters.isAvailable}
-                                            onChange={(e) => setFilters({ ...filters, isAvailable: e.target.value })}
+                                            onChange={(e) => updateFilterWithPageReset({ ...filters, isAvailable: e.target.value })}
                                             InputLabelProps={{ shrink: true }}
                                             SelectProps={{ native: true }}
                                         >
@@ -994,7 +1063,7 @@ const AdminDashboard = () => {
                                             select
                                             label="Donated Before"
                                             value={filters.hasDonatedBefore}
-                                            onChange={(e) => setFilters({ ...filters, hasDonatedBefore: e.target.value })}
+                                            onChange={(e) => updateFilterWithPageReset({ ...filters, hasDonatedBefore: e.target.value })}
                                             InputLabelProps={{ shrink: true }}
                                             SelectProps={{ native: true }}
                                         >
@@ -1029,10 +1098,37 @@ const AdminDashboard = () => {
                                     Download CSV (Filtered)
                                 </Button>
                             </Box>
-                            <TableContainer sx={{ overflowX: 'auto' }}>
+                            <TableContainer sx={{ 
+                                overflowX: 'auto',
+                                overflowY: 'visible',
+                                '&::-webkit-scrollbar': {
+                                    height: '8px',
+                                },
+                                '&::-webkit-scrollbar-track': {
+                                    bgcolor: '#f5f5f5',
+                                },
+                                '&::-webkit-scrollbar-thumb': {
+                                    bgcolor: '#bdbdbd',
+                                    borderRadius: '4px',
+                                    '&:hover': {
+                                        bgcolor: '#9e9e9e',
+                                    },
+                                },
+                            }}>
                                 <Table size="small">
-                                    <TableHead>
-                                        <TableRow sx={{ background: '#f8f9fa', position: 'sticky', top: 0 }}>
+                                    <TableHead sx={{ 
+                                        position: 'sticky',
+                                        top: 0,
+                                        zIndex: 10,
+                                        backgroundColor: '#f8f9fa'
+                                    }}>
+                                        <TableRow sx={{ 
+                                            background: '#f8f9fa', 
+                                            position: 'sticky', 
+                                            top: 0,
+                                            zIndex: 11,
+                                            boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
+                                        }}>
                                             <TableCell>
                                                 <TableSortLabel
                                                     active={sortConfig.key === 'fullName'}
@@ -1089,11 +1185,11 @@ const AdminDashboard = () => {
                                             </TableCell>
                                             <TableCell>
                                                 <TableSortLabel
-                                                    active={sortConfig.key === 'university'}
+                                                    active={sortConfig.key === 'institution'}
                                                     direction={sortConfig.direction}
-                                                    onClick={() => handleSort('university')}
+                                                    onClick={() => handleSort('institution')}
                                                 >
-                                                    <strong>University</strong>
+                                                    <strong>Institution</strong>
                                                 </TableSortLabel>
                                             </TableCell>
                                             <TableCell>
@@ -1127,8 +1223,10 @@ const AdminDashboard = () => {
                                         </TableRow>
                                     </TableHead>
                                     <TableBody>
-                                        {getSortedDonors().map((donor) => (
-                                            <TableRow key={`${donor.university}-${donor.department}-${donor.id}`}>
+                                        {getSortedDonors()
+                                            .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                                            .map((donor) => (
+                                            <TableRow key={`${donor.institution}-${donor.department}-${donor.id}`}>
                                                 <TableCell sx={{ maxWidth: 150 }}>{donor.fullName}</TableCell>
                                                 <TableCell>{donor.gender || 'N/A'}</TableCell>
                                                 <TableCell>{donor.dateOfBirth ? new Date(donor.dateOfBirth).toLocaleDateString() : 'N/A'}</TableCell>
@@ -1141,7 +1239,7 @@ const AdminDashboard = () => {
                                                 </TableCell>
                                                 <TableCell>{donor.phone || 'N/A'}</TableCell>
                                                 <TableCell sx={{ maxWidth: 200 }}>{donor.email || 'N/A'}</TableCell>
-                                                <TableCell sx={{ maxWidth: 120 }}>{donor.university}</TableCell>
+                                                <TableCell sx={{ maxWidth: 120 }}>{donor.institution}</TableCell>
                                                 <TableCell sx={{ maxWidth: 150 }}>{donor.department}</TableCell>
                                                 <TableCell>
                                                     {donor.hasDonatedBefore ? (
@@ -1182,6 +1280,18 @@ const AdminDashboard = () => {
                                     </TableBody>
                                 </Table>
                             </TableContainer>
+                            <TablePagination
+                                rowsPerPageOptions={[5, 10, 25, 50]}
+                                component="div"
+                                count={getSortedDonors().length}
+                                rowsPerPage={rowsPerPage}
+                                page={page}
+                                onPageChange={(event, newPage) => setPage(newPage)}
+                                onRowsPerPageChange={(event) => {
+                                    setRowsPerPage(parseInt(event.target.value, 10));
+                                    setPage(0);
+                                }}
+                            />
                         </Box>
                     )}
 
@@ -1258,10 +1368,37 @@ const AdminDashboard = () => {
                                     Download CSV
                                 </Button>
                             </Box>
-                            <TableContainer>
+                            <TableContainer sx={{ 
+                                overflowX: 'auto',
+                                overflowY: 'visible',
+                                '&::-webkit-scrollbar': {
+                                    height: '8px',
+                                },
+                                '&::-webkit-scrollbar-track': {
+                                    bgcolor: '#f5f5f5',
+                                },
+                                '&::-webkit-scrollbar-thumb': {
+                                    bgcolor: '#bdbdbd',
+                                    borderRadius: '4px',
+                                    '&:hover': {
+                                        bgcolor: '#9e9e9e',
+                                    },
+                                },
+                            }}>
                                 <Table>
-                                    <TableHead>
-                                        <TableRow sx={{ background: '#f8f9fa' }}>
+                                    <TableHead sx={{ 
+                                        position: 'sticky',
+                                        top: 0,
+                                        zIndex: 10,
+                                        backgroundColor: '#f8f9fa'
+                                    }}>
+                                        <TableRow sx={{ 
+                                            background: '#f8f9fa',
+                                            position: 'sticky',
+                                            top: 0,
+                                            zIndex: 11,
+                                            boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
+                                        }}>
                                             <TableCell><strong>Donor ID</strong></TableCell>
                                             <TableCell><strong>University</strong></TableCell>
                                             <TableCell><strong>Department</strong></TableCell>
@@ -1271,7 +1408,9 @@ const AdminDashboard = () => {
                                         </TableRow>
                                     </TableHead>
                                     <TableBody>
-                                        {requests.map((request) => (
+                                        {requests
+                                            .slice(requestPage * requestRowsPerPage, requestPage * requestRowsPerPage + requestRowsPerPage)
+                                            .map((request) => (
                                             <TableRow key={request.id}>
                                                 <TableCell>{request.donorId}</TableCell>
                                                 <TableCell>{request.institution}</TableCell>
@@ -1321,6 +1460,18 @@ const AdminDashboard = () => {
                                     </TableBody>
                                 </Table>
                             </TableContainer>
+                            <TablePagination
+                                rowsPerPageOptions={[5, 10, 25, 50]}
+                                component="div"
+                                count={requests.length}
+                                rowsPerPage={requestRowsPerPage}
+                                page={requestPage}
+                                onPageChange={(event, newPage) => setRequestPage(newPage)}
+                                onRowsPerPageChange={(event) => {
+                                    setRequestRowsPerPage(parseInt(event.target.value, 10));
+                                    setRequestPage(0);
+                                }}
+                            />
                         </Box>
                     )}
 
@@ -1486,9 +1637,9 @@ const AdminDashboard = () => {
             </Container>
 
             {/* Edit Dialog */}
-            <Dialog open={editDialog} onClose={() => setEditDialog(false)} maxWidth="sm" fullWidth>
+            <Dialog open={editDialog} onClose={() => setEditDialog(false)} maxWidth="md" fullWidth>
                 <DialogTitle>Edit Donor Information</DialogTitle>
-                <DialogContent sx={{ pt: 2, display: 'flex', flexDirection: 'column', gap: 2, maxHeight: '70vh', overflowY: 'auto' }}>
+                <DialogContent sx={{paddingTop: '10px', display: 'flex', flexDirection: 'column', gap: 2, maxHeight: '70vh', overflowY: 'auto' }}>
                     {selectedDonor && (
                         <>
                             <TextField
@@ -1498,6 +1649,7 @@ const AdminDashboard = () => {
                                 onChange={(e) =>
                                     setEditFormData({ ...editFormData, fullName: e.target.value })
                                 }
+                                style={{marginTop:20}}
                             />
                             <TextField
                                 fullWidth
@@ -1572,14 +1724,14 @@ const AdminDashboard = () => {
                             <TextField
                                 fullWidth
                                 label="University"
-                                value={editFormData.university || ''}
-                                disabled
+                                value={editFormData.institution || ''}
+                                
                             />
                             <TextField
                                 fullWidth
                                 label="Department"
                                 value={editFormData.department || ''}
-                                disabled
+                                
                             />
                             <TextField
                                 fullWidth
