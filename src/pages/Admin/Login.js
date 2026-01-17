@@ -12,6 +12,8 @@ import {
     Email as EmailIcon,
     Lock as LockIcon,
     VpnKey as AdminIcon,
+    Visibility as VisibilityIcon,
+    VisibilityOff as VisibilityOffIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
@@ -22,6 +24,7 @@ const AdminLogin = () => {
     const navigate = useNavigate();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
@@ -178,7 +181,7 @@ const AdminLogin = () => {
                             {/* Password */}
                             <TextField
                                 fullWidth
-                                type="password"
+                                type={showPassword ? 'text' : 'password'}
                                 label="Password"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
@@ -187,6 +190,24 @@ const AdminLogin = () => {
                                     startAdornment: (
                                         <InputAdornment position="start">
                                             <LockIcon sx={{ color: '#457b9d' }} />
+                                        </InputAdornment>
+                                    ),
+                                    endAdornment: (
+                                        <InputAdornment position="end">
+                                            <Button
+                                                onClick={() => setShowPassword(!showPassword)}
+                                                disabled={loading}
+                                                sx={{
+                                                    minWidth: 'auto',
+                                                    p: 0.5,
+                                                    color: '#457b9d',
+                                                    '&:hover': {
+                                                        backgroundColor: 'transparent',
+                                                    },
+                                                }}
+                                            >
+                                                {showPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
+                                            </Button>
                                         </InputAdornment>
                                     ),
                                 }}
