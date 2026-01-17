@@ -10,9 +10,7 @@ import {
   getDoc,
 } from 'firebase/firestore';
 import { db } from '../config/firebase';
-import { DEPARTMENT_SHORT_FORMS, BLOOD_GROUPS } from '../config/constants';
-import { getDepartmentDisplayName, getDepartmentShortForm } from '../utils/departmentHelper';
-
+import {  BLOOD_GROUPS } from '../config/constants';
 const FirebaseContext = createContext();
 
 export const useFirebase = () => {

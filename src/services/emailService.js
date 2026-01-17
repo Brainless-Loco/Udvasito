@@ -92,8 +92,10 @@ export const sendEmail = async (templateId, params) => {
   }
 };
 
-export default {
+const emailService = {
   sendDonorWelcomeEmail,
   sendVolunteerWelcomeEmail,
   sendEmail,
 };
+
+export default emailService;

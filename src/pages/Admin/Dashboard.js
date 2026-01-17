@@ -24,10 +24,6 @@ import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
 import Chip from '@mui/material/Chip';
-import Accordion from '@mui/material/Accordion';
-import AccordionSummary from '@mui/material/AccordionSummary';
-import AccordionDetails from '@mui/material/AccordionDetails';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import DownloadIcon from '@mui/icons-material/Download';
 
 import {
@@ -38,15 +34,12 @@ import {
     CheckCircle as CheckIcon,
     Cancel as CancelIcon,
     People as PeopleIcon,
-    School as SchoolIcon,
     Notifications as NotificationsIcon,
     Bloodtype as BloodtypeIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { collection, getDocs, updateDoc, deleteDoc, doc, getDoc, increment, setDoc } from 'firebase/firestore';
 import { db } from '../../config/firebase';
-import { getDepartmentDisplayName } from '../../utils/departmentHelper';
-import { DEPARTMENT_SHORT_FORMS } from '../../config/constants';
 import Swal from 'sweetalert2';
 import RequestTrendChart from '../../components/Admin/RequestTrendChart';
 
@@ -111,7 +104,7 @@ const AdminDashboard = () => {
     }, [navigate]);
 
     // Helper function to sanitize for ID
-    const sanitizeId = (str) => str.replace(/[^a-zA-Z0-9_-]/g, '_').toLowerCase().slice(0, 64);
+    // const sanitizeId = (str) => str.replace(/[^a-zA-Z0-9_-]/g, '_').toLowerCase().slice(0, 64);
 
     // Fetch all data with blood group structure
     const fetchData = async () => {

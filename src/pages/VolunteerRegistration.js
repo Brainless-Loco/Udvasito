@@ -1,22 +1,22 @@
 import React, { useState } from 'react';
-import Box from '@mui/material/Box';
-import Container from '@mui/material/Container';
-import Grid from '@mui/material/Grid';
-import TextField from '@mui/material/TextField';
-import MenuItem from '@mui/material/MenuItem';
-import Button from '@mui/material/Button';
-import Paper from '@mui/material/Paper';
-import Typography from '@mui/material/Typography';
-import Snackbar from '@mui/material/Snackbar';
-import Alert from '@mui/material/Alert';
-import CircularProgress from '@mui/material/CircularProgress';
-import {
-  VolunteerActivism as VolunteerIcon,
-} from '@mui/icons-material';
+// import Box from '@mui/material/Box';
+// import Container from '@mui/material/Container';
+// import Grid from '@mui/material/Grid';
+// import TextField from '@mui/material/TextField';
+// import MenuItem from '@mui/material/MenuItem';
+// import Button from '@mui/material/Button';
+// import Paper from '@mui/material/Paper';
+// import Typography from '@mui/material/Typography';
+// import Snackbar from '@mui/material/Snackbar';
+// import Alert from '@mui/material/Alert';
+// import CircularProgress from '@mui/material/CircularProgress';
+// import {
+//   VolunteerActivism as VolunteerIcon,
+// } from '@mui/icons-material';
 import { useLanguage, useFirebase } from '../context';
 import { sendVolunteerWelcomeEmail } from '../services/emailService';
-import { SectionHeader } from '../components';
-import { GENDER_OPTIONS, INSTITUTIONS, DEPARTMENTS_CU } from '../config/constants';
+// import { SectionHeader } from '../components';
+// import { GENDER_OPTIONS, INSTITUTIONS, DEPARTMENTS_CU } from '../config/constants';
 import UnderDevelopment from './UnderDevelopment';
 
 const VolunteerRegistration = () => {
@@ -43,9 +43,13 @@ const VolunteerRegistration = () => {
     emergencyContact: '',
   });
 
+  // eslint-disable-next-line
   const [loading, setLoading] = useState(false);
+  
+  // eslint-disable-next-line
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
 
+  // eslint-disable-next-line
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
@@ -54,6 +58,7 @@ const VolunteerRegistration = () => {
     }));
   };
 
+  // eslint-disable-next-line no-unused-vars
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
