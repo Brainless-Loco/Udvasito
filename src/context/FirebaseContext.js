@@ -54,6 +54,7 @@ export const FirebaseProvider = ({ children }) => {
         setStats({
           total: globalStats.totalDonors || 0,
           available: globalStats.availableDonors || 0,
+          experiencedDonors: globalStats.experiencedDonors || 0,
           byBloodGroup: globalStats.byBloodGroup || {},
         });
         return globalStats;
@@ -63,6 +64,7 @@ export const FirebaseProvider = ({ children }) => {
         const initialStats = {
           totalDonors: 0,
           availableDonors: 0,
+          experiencedDonors: 0,
           byBloodGroup: Object.fromEntries(BLOOD_GROUPS.map(bg => [bg, 0])),
           createdAt: new Date().toISOString(),
         };
@@ -70,6 +72,7 @@ export const FirebaseProvider = ({ children }) => {
         setStats({
           total: 0,
           available: 0,
+          experiencedDonors: 0,
           byBloodGroup: initialStats.byBloodGroup,
         });
         return initialStats;
@@ -187,12 +190,16 @@ export const FirebaseProvider = ({ children }) => {
 
       // Update stats
       const isAvailable = donorData.isAvailable === 'yes' || donorData.isAvailable === true;
+      const hasDonatedBefore = donorData.hasDonatedBefore === 'true' || donorData.hasDonatedBefore === true;
       
       const statsUpdateData = {
         totalDonors: increment(1),
       };
       if (isAvailable) {
         statsUpdateData.availableDonors = increment(1);
+      }
+      if (hasDonatedBefore) {
+        statsUpdateData.experiencedDonors = increment(1);
       }
       statsUpdateData[`byBloodGroup.${bloodGroup}`] = increment(1);
 

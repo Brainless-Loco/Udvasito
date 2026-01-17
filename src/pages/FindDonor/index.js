@@ -79,7 +79,7 @@ const FindDonor = () => {
                 />
 
                 {/* Stats Overview */}
-                <StatsOverview stats={stats} totalDonors={donors.length} />
+                <StatsOverview stats={stats} totalDonors={stats.total} />
 
                 {/* Search Filters */}
                 <SearchFilters
